@@ -13,13 +13,11 @@ import (
 
 type Handler struct {
 	db database.Database
-	r  *responses.NoteResponder
 }
 
 func New(db database.Database) Handler {
 	return Handler{
 		db: db,
-		r:  responses.NewNoteResponder(),
 	}
 }
 
@@ -29,9 +27,9 @@ func (h *Handler) CreateNewNote(w http.ResponseWriter, r *http.Request) {
 	var response responses.JsonNoteResponse
 	newNote, err := h.db.Create(r.Body)
 	if err != nil {
-		response = h.r.Failure(err.Error())
+		response = responses.Failure(err.Error())
 	} else {
-		response = h.r.Success([]models.Note{newNote}, "The note was successfully created")
+		response = responses.Success([]models.Note{newNote}, "The note was successfully created")
 	}
 
 	json.NewEncoder(w).Encode(response)
@@ -43,9 +41,9 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	var response responses.JsonNoteResponse
 	note, err := h.db.Update(id, r.Body)
 	if err != nil {
-		response = h.r.Failure(err.Error())
+		response = responses.Failure(err.Error())
 	} else {
-		response = h.r.Success([]models.Note{note}, "The note was successfully updated")
+		response = responses.Success([]models.Note{note}, "The note was successfully updated")
 	}
 
 	json.NewEncoder(w).Encode(response)
@@ -57,9 +55,9 @@ func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 
 	err := h.db.Delete(id, r.Body)
 	if err != nil {
-		response = h.r.Failure(err.Error())
+		response = responses.Failure(err.Error())
 	} else {
-		response = h.r.Success([]models.Note{}, "The note was successfully deleted")
+		response = responses.Success([]models.Note{}, "The note was successfully deleted")
 	}
 
 	json.NewEncoder(w).Encode(response)
@@ -70,7 +68,7 @@ func (h *Handler) ListActiveNotes(w http.ResponseWriter, r *http.Request) {
 
 	notes, err := h.db.ListActiveNotes(r.Body)
 	if err != nil {
-		response = h.r.Failure(err.Error())
+		response = responses.Failure(err.Error())
 		json.NewEncoder(w).Encode(response)
 	} else {
 		json.NewEncoder(w).Encode(notes)
@@ -82,7 +80,7 @@ func (h *Handler) ListArchivedNotes(w http.ResponseWriter, r *http.Request) {
 
 	notes, err := h.db.ListArchivedNotes(r.Body)
 	if err != nil {
-		response = h.r.Failure(err.Error())
+		response = responses.Failure(err.Error())
 		json.NewEncoder(w).Encode(response)
 	} else {
 		json.NewEncoder(w).Encode(notes)
