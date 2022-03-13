@@ -173,7 +173,7 @@ The API have the following key features:
     The file `/tmp/notes/Sabriel/active/note1_4ac82864-0354-43af-5582-fc721dfc4cf4.txt` will be deleted.
 
     **SQL**
-    
+
     The record will be deleted from database.
 
 1. Archive a note 
@@ -199,7 +199,9 @@ The API have the following key features:
         "message":"The note was successfully updated"
     }
     ```
-    SQL storage not supported for action yet.
+    **SQL**
+    
+    The note will have the attribute `archived` set to true.
 
 1. Unarchive a note 
 

@@ -97,6 +97,17 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 	if !utils.IsSet(note.Content) {
 		note.Content = existingNote.Content
 	}
+	if !utils.IsSet(note.User.Username) {
+		note.User = existingNote.User
+	}
+	note.Id = id
+
+	if note.Archived {
+		if err := ArchiveNote(s, note); err != nil {
+			return models.Note{}, err
+		}
+		return note, nil
+	}
 
 	_, err = s.Db.Exec("UPDATE notes set name=?, content=?, archived=? where id=?", note.Name, note.Content, 0, id)
 	if err != nil {
@@ -120,4 +131,13 @@ func (s *SQL) ListActiveNotes(body io.ReadCloser) ([]models.Note, error) {
 
 func (s *SQL) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {
 	return []models.Note{}, nil
+}
+
+func ArchiveNote(s *SQL, note models.Note) error {
+	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 1, note.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

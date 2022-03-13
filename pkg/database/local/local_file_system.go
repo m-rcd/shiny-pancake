@@ -212,7 +212,6 @@ func ListNotes(dir string, files []fs.FileInfo, user models.User, archived bool)
 func Archive(dir string, note models.Note) (models.Note, error) {
 	oldPath := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
 	newPath := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)
-
 	archivedNote, err := moveNote(note, oldPath, newPath)
 	if err != nil {
 		return models.Note{}, err

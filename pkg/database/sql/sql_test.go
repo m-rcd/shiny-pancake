@@ -81,4 +81,31 @@ var _ = Describe("Sql", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
+
+	Context("Archive", func() {
+		It("archives a note", func() {
+			s := sql.NewSQL("username", "password", "127.0.0.1", "3306")
+			db, mock, err := sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			s.Db = db
+			defer db.Close()
+			existingNote := models.Note{Id: "1", Name: "Note1", Content: "Miawwww", Archived: false, User: models.User{Username: "Casper"}}
+
+			requestData := models.Note{Archived: true, User: models.User{Username: "Casper"}}
+			bytes, err := json.Marshal(requestData)
+			Expect(err).NotTo(HaveOccurred())
+			reader := io.NopCloser(strings.NewReader(string(bytes)))
+
+			rows := sqlmock.NewRows([]string{"id", "name", "content", "archived"}).
+				AddRow(existingNote.Id, existingNote.Name, existingNote.Content, existingNote.Archived)
+			mock.ExpectQuery("SELECT id, name, content, archived FROM notes WHERE id=1").WillReturnRows(rows)
+
+			mock.ExpectExec("UPDATE notes").WithArgs(1, existingNote.Id).WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.ExpectCommit()
+
+			updatedNote, err := s.Update(existingNote.Id, reader)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updatedNote.Archived).To(Equal(requestData.Archived))
+		})
+	})
 })
