@@ -44,23 +44,26 @@ var (
 func (l *LocalFileSystem) Create(body io.ReadCloser) (models.Note, error) {
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &note)
-	note.Id = newId()
 	err := validateNote(note)
 	if err != nil {
 		return models.Note{}, err
 	}
 
-	folder := fmt.Sprintf("%s/%s/active/", l.workDir, note.User.Username)
-	err = os.MkdirAll(folder, 0777)
+	note.Id = newId()
+
+	activeDir := fmt.Sprintf("%s/%s/active/", l.workDir, note.User.Username)
+	err = os.MkdirAll(activeDir, 0777)
 	if err != nil {
 		return models.Note{}, err
 	}
+
 	fileName := fmt.Sprintf("%s_%s.txt", note.Name, note.Id)
-	filePath := fmt.Sprintf("%s%s", folder, fileName)
+	filePath := fmt.Sprintf("%s%s", activeDir, fileName)
 	err = ioutil.WriteFile(filePath, []byte(note.Content), 0777)
 	if err != nil {
-		fmt.Printf("Unable to write file: %v", err)
+		return models.Note{}, err
 	}
+
 	return note, nil
 }
 
@@ -79,7 +82,7 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 	}
 	dir := fmt.Sprintf("%s/%s/", l.workDir, note.User.Username)
 
-	if Archived(dir, id) {
+	if archived(dir, id) {
 		activeNote, err := Unarchive(l.workDir, note)
 		if err != nil {
 			return note, err
@@ -104,7 +107,7 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 
 	err = ioutil.WriteFile(filePath, []byte(note.Content), 0777)
 	if err != nil {
-		fmt.Printf("Unable to write file: %v", err)
+		return models.Note{}, err
 	}
 	return note, nil
 }
@@ -163,7 +166,6 @@ func ListNotes(dir string, files []fs.FileInfo, user models.User, archived bool)
 	for _, file := range files {
 		path := fmt.Sprintf("%s/%s", dir, file.Name())
 		content, err := os.ReadFile(path)
-
 		if err != nil {
 			return []models.Note{}, err
 		}
@@ -175,6 +177,7 @@ func ListNotes(dir string, files []fs.FileInfo, user models.User, archived bool)
 			Content:  string(content),
 			Archived: archived,
 		}
+
 		err = validateNote(note)
 		if err != nil {
 			return []models.Note{}, err
@@ -286,7 +289,7 @@ func findFile(dir string, id string) (string, error) {
 	return fileName, nil
 }
 
-func Archived(dir string, id string) bool {
+func archived(dir string, id string) bool {
 	file, _ := findFile(dir+"archived/", id)
 	return file != ""
 }

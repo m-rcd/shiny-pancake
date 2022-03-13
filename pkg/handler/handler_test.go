@@ -16,7 +16,6 @@ import (
 )
 
 var _ = Describe("Handler", func() {
-
 	Context("#CreateNewNote", func() {
 		It("Creates a new note", func() {
 			fake_db := new(databasefakes.FakeDatabase)

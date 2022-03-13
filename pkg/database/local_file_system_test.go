@@ -15,12 +15,18 @@ import (
 )
 
 var _ = Describe("LocalFileSystem", func() {
-	var db database.Database
-	var tempDir string
+	var (
+		db      database.Database
+		tempDir string
+		err     error
+	)
 
 	BeforeEach(func() {
-		var err error
 		tempDir, err = ioutil.TempDir("", "local_file_system_test")
+		Expect(err).NotTo(HaveOccurred())
+
+		db = database.NewLocalFileSystem(tempDir)
+		err = db.Open()
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -30,15 +36,8 @@ var _ = Describe("LocalFileSystem", func() {
 
 	Context("CREATE", func() {
 		It("creates a new note file", func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			note := models.Note{Name: "Note1", Content: "Miawwww", User: models.User{Username: "Casper"}}
-
-			noteBytes, err := json.Marshal(note)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+			r := buildReader(note)
 
 			newNote, err := db.Create(r)
 			Expect(err).NotTo(HaveOccurred())
@@ -49,15 +48,8 @@ var _ = Describe("LocalFileSystem", func() {
 		Context("when error occurs", func() {
 			Context("when name is not set", func() {
 				It("does not create a note file and raises an error", func() {
-					db = database.NewLocalFileSystem(tempDir)
-					err := db.Open()
-					Expect(err).NotTo(HaveOccurred())
-
 					note := models.Note{Name: "", Content: "Miawwww", User: models.User{Username: "Casper"}}
-
-					noteBytes, err := json.Marshal(note)
-					Expect(err).NotTo(HaveOccurred())
-					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+					r := buildReader(note)
 
 					_, err = db.Create(r)
 					Expect(err).To(MatchError("name must be set"))
@@ -66,15 +58,8 @@ var _ = Describe("LocalFileSystem", func() {
 
 			Context("when User username is not set", func() {
 				It("does not create a note file and raises an error", func() {
-					db = database.NewLocalFileSystem(tempDir)
-					err := db.Open()
-					Expect(err).NotTo(HaveOccurred())
-
 					note := models.Note{Name: "Note1", Content: "Miawwww", User: models.User{Username: ""}}
-
-					noteBytes, err := json.Marshal(note)
-					Expect(err).NotTo(HaveOccurred())
-					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+					r := buildReader(note)
 
 					_, err = db.Create(r)
 					Expect(err).To(MatchError("user must be set"))
@@ -85,31 +70,15 @@ var _ = Describe("LocalFileSystem", func() {
 
 	Context("UPDATE", func() {
 		var existingNote models.Note
+
 		BeforeEach(func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
-
-			noteBytes, err := json.Marshal(note)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(noteBytes)))
-
-			existingNote, err = db.Create(r)
-			Expect(err).NotTo(HaveOccurred())
+			existingNote = createNote(note, db)
 		})
 
 		It("updates a previously saved note", func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			note := models.Note{Name: "Note1", Content: "BOOOO", User: models.User{Username: "Casper"}}
-
-			noteBytes, err := json.Marshal(note)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+			r := buildReader(note)
 
 			_, err = db.Update(existingNote.Id, r)
 			Expect(err).NotTo(HaveOccurred())
@@ -122,15 +91,8 @@ var _ = Describe("LocalFileSystem", func() {
 		Context("when an error occurs", func() {
 			Context("when file does not exist", func() {
 				It("does not update the note and raises an error", func() {
-					db = database.NewLocalFileSystem(tempDir)
-					err := db.Open()
-					Expect(err).NotTo(HaveOccurred())
-
 					note := models.Note{Name: "Note2", Content: "BOOOO", User: models.User{Username: "Casper"}}
-
-					noteBytes, err := json.Marshal(note)
-					Expect(err).NotTo(HaveOccurred())
-					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+					r := buildReader(note)
 
 					_, err = db.Update(existingNote.Id, r)
 					Expect(err).To(MatchError("file does not exist"))
@@ -143,15 +105,8 @@ var _ = Describe("LocalFileSystem", func() {
 
 			Context("when name is not set", func() {
 				It("does not update the note and raises an error", func() {
-					db = database.NewLocalFileSystem(tempDir)
-					err := db.Open()
-					Expect(err).NotTo(HaveOccurred())
-
 					note := models.Note{Name: "", Content: "BOOOO", User: models.User{Username: "Casper"}}
-
-					noteBytes, err := json.Marshal(note)
-					Expect(err).NotTo(HaveOccurred())
-					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+					r := buildReader(note)
 
 					_, err = db.Update(existingNote.Id, r)
 					Expect(err).To(MatchError("name must be set"))
@@ -164,15 +119,8 @@ var _ = Describe("LocalFileSystem", func() {
 
 			Context("when user is not set", func() {
 				It("does not update the note and raises an error", func() {
-					db = database.NewLocalFileSystem(tempDir)
-					err := db.Open()
-					Expect(err).NotTo(HaveOccurred())
-
 					note := models.Note{Name: "Note1", Content: "BOOOO", User: models.User{Username: ""}}
-
-					noteBytes, err := json.Marshal(note)
-					Expect(err).NotTo(HaveOccurred())
-					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+					r := buildReader(note)
 
 					_, err = db.Update(existingNote.Id, r)
 					Expect(err).To(MatchError("user must be set"))
@@ -187,31 +135,15 @@ var _ = Describe("LocalFileSystem", func() {
 
 	Context("DELETE", func() {
 		var existingNote models.Note
+
 		BeforeEach(func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
-
-			noteBytes, err := json.Marshal(note)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(noteBytes)))
-
-			existingNote, err = db.Create(r)
-			Expect(err).NotTo(HaveOccurred())
+			existingNote = createNote(note, db)
 		})
 
 		It("deletes a note", func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			user := models.User{Username: "Casper"}
-
-			userBytes, err := json.Marshal(user)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(userBytes)))
+			r := buildReader(user)
 
 			err = db.Delete(existingNote.Id, r)
 			Expect(err).NotTo(HaveOccurred())
@@ -222,15 +154,8 @@ var _ = Describe("LocalFileSystem", func() {
 
 		Context("when errors occur", func() {
 			It("does not delete the file and raises an error", func() {
-				db = database.NewLocalFileSystem(tempDir)
-				err := db.Open()
-				Expect(err).NotTo(HaveOccurred())
-
 				user := models.User{Username: "Casper"}
-
-				userBytes, err := json.Marshal(user)
-				Expect(err).NotTo(HaveOccurred())
-				r := io.NopCloser(strings.NewReader(string(userBytes)))
+				r := buildReader(user)
 
 				err = db.Delete("123", r)
 				Expect(err).To(MatchError("file does not exist"))
@@ -245,31 +170,13 @@ var _ = Describe("LocalFileSystem", func() {
 		var existingNote models.Note
 
 		BeforeEach(func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
-
-			noteBytes, err := json.Marshal(note)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(noteBytes)))
-
-			existingNote, err = db.Create(r)
-			Expect(existingNote.Archived).To(BeFalse())
-			Expect(err).NotTo(HaveOccurred())
+			existingNote = createNote(note, db)
 		})
 
 		It("archives a note", func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			note := models.Note{Archived: true, User: models.User{Username: "Casper"}}
-
-			noteBytes, err := json.Marshal(note)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+			r := buildReader(note)
 
 			updatedNote, err := db.Update(existingNote.Id, r)
 			Expect(err).NotTo(HaveOccurred())
@@ -284,15 +191,8 @@ var _ = Describe("LocalFileSystem", func() {
 
 		Context("when content and name are passed as attributes", func() {
 			It("archives the note but does not update name/content", func() {
-				db = database.NewLocalFileSystem(tempDir)
-				err := db.Open()
-				Expect(err).NotTo(HaveOccurred())
-
 				note := models.Note{Name: "Note2", Content: "NewContent", Archived: true, User: models.User{Username: "Casper"}}
-
-				noteBytes, err := json.Marshal(note)
-				Expect(err).NotTo(HaveOccurred())
-				r := io.NopCloser(strings.NewReader(string(noteBytes)))
+				r := buildReader(note)
 
 				updatedNote, err := db.Update(existingNote.Id, r)
 				Expect(err).NotTo(HaveOccurred())
@@ -310,39 +210,19 @@ var _ = Describe("LocalFileSystem", func() {
 			var archivedNote models.Note
 
 			BeforeEach(func() {
-				db = database.NewLocalFileSystem(tempDir)
-				err := db.Open()
-				Expect(err).NotTo(HaveOccurred())
-
 				note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
+				archivedNote = createNote(note, db)
 
-				noteBytes, err := json.Marshal(note)
-				Expect(err).NotTo(HaveOccurred())
-				r := io.NopCloser(strings.NewReader(string(noteBytes)))
-
-				existingNote, err = db.Create(r)
-				Expect(existingNote.Archived).To(BeFalse())
-				Expect(err).NotTo(HaveOccurred())
 				updatedNote := models.Note{Name: "Note2", Content: "NewContent", Archived: true, User: models.User{Username: "Casper"}}
-
-				updatedNoteBytes, err := json.Marshal(updatedNote)
-				Expect(err).NotTo(HaveOccurred())
-				rr := io.NopCloser(strings.NewReader(string(updatedNoteBytes)))
+				rr := buildReader(updatedNote)
 
 				archivedNote, err = db.Update(existingNote.Id, rr)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("unarchives a note", func() {
-				db = database.NewLocalFileSystem(tempDir)
-				err := db.Open()
-				Expect(err).NotTo(HaveOccurred())
-
 				note := models.Note{Archived: false, User: models.User{Username: "Casper"}}
-
-				noteBytes, err := json.Marshal(note)
-				Expect(err).NotTo(HaveOccurred())
-				r := io.NopCloser(strings.NewReader(string(noteBytes)))
+				r := buildReader(note)
 
 				updatedNote, err := db.Update(archivedNote.Id, r)
 				Expect(err).NotTo(HaveOccurred())
@@ -358,44 +238,21 @@ var _ = Describe("LocalFileSystem", func() {
 		})
 	})
 
-	Context("LISTACTIVENOTES", func() {
+	Context("LIST active notes", func() {
 		var note1 models.Note
 		var note2 models.Note
 
 		BeforeEach(func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			noteData1 := models.Note{Name: "Note1", Content: "Kirjava", User: models.User{Username: "Lyra"}}
-
-			noteBytes1, err := json.Marshal(noteData1)
-			Expect(err).NotTo(HaveOccurred())
-			r1 := io.NopCloser(strings.NewReader(string(noteBytes1)))
-
-			note1, err = db.Create(r1)
-			Expect(err).NotTo(HaveOccurred())
+			note1 = createNote(noteData1, db)
 
 			noteData2 := models.Note{Name: "Note2", Content: "Pantalaimon", User: models.User{Username: "Lyra"}}
-
-			noteBytes2, err := json.Marshal(noteData2)
-			Expect(err).NotTo(HaveOccurred())
-			r2 := io.NopCloser(strings.NewReader(string(noteBytes2)))
-
-			note2, err = db.Create(r2)
-			Expect(err).NotTo(HaveOccurred())
+			note2 = createNote(noteData2, db)
 		})
 
 		It("returns a list of active notes", func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			user := models.User{Username: "Lyra"}
-
-			userBytes, err := json.Marshal(user)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(userBytes)))
+			r := buildReader(user)
 
 			notes, err := db.ListActiveNotes(r)
 			Expect(err).NotTo(HaveOccurred())
@@ -405,64 +262,36 @@ var _ = Describe("LocalFileSystem", func() {
 		})
 	})
 
-	Context("LISTARCHIVEDNOTES", func() {
+	Context("LIST archived notes", func() {
 		var note1 models.Note
 		var note2 models.Note
 		var archivedNote1 models.Note
 		var archivedNote2 models.Note
 
 		BeforeEach(func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			noteData1 := models.Note{Name: "Note1", Content: "Kirjava", User: models.User{Username: "Lyra"}}
-
-			noteBytes1, err := json.Marshal(noteData1)
-			Expect(err).NotTo(HaveOccurred())
-			r1 := io.NopCloser(strings.NewReader(string(noteBytes1)))
-
-			note1, err = db.Create(r1)
-			Expect(err).NotTo(HaveOccurred())
+			note1 = createNote(noteData1, db)
 
 			noteData2 := models.Note{Name: "Note2", Content: "Pantalaimon", User: models.User{Username: "Lyra"}}
-
-			noteBytes2, err := json.Marshal(noteData2)
-			Expect(err).NotTo(HaveOccurred())
-			r2 := io.NopCloser(strings.NewReader(string(noteBytes2)))
-
-			note2, err = db.Create(r2)
-			Expect(err).NotTo(HaveOccurred())
+			note2 = createNote(noteData2, db)
 
 			updatedNote1 := models.Note{Archived: true, User: models.User{Username: "Lyra"}}
 
-			updatedNote1Bytes, err := json.Marshal(updatedNote1)
-			Expect(err).NotTo(HaveOccurred())
-			rr1 := io.NopCloser(strings.NewReader(string(updatedNote1Bytes)))
+			rr1 := buildReader(updatedNote1)
 
 			archivedNote1, err = db.Update(note1.Id, rr1)
 			Expect(err).NotTo(HaveOccurred())
 
 			updatedNote2 := models.Note{Archived: true, User: models.User{Username: "Lyra"}}
-
-			updatedNote2Bytes, err := json.Marshal(updatedNote2)
-			Expect(err).NotTo(HaveOccurred())
-			rr2 := io.NopCloser(strings.NewReader(string(updatedNote2Bytes)))
+			rr2 := buildReader(updatedNote2)
 
 			archivedNote2, err = db.Update(note2.Id, rr2)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns a list of archived notes", func() {
-			db = database.NewLocalFileSystem(tempDir)
-			err := db.Open()
-			Expect(err).NotTo(HaveOccurred())
-
 			user := models.User{Username: "Lyra"}
-
-			userBytes, err := json.Marshal(user)
-			Expect(err).NotTo(HaveOccurred())
-			r := io.NopCloser(strings.NewReader(string(userBytes)))
+			r := buildReader(user)
 
 			notes, err := db.ListArchivedNotes(r)
 			Expect(err).NotTo(HaveOccurred())
@@ -473,3 +302,17 @@ var _ = Describe("LocalFileSystem", func() {
 	})
 
 })
+
+func buildReader(data interface{}) io.ReadCloser {
+	bytes, err := json.Marshal(data)
+	Expect(err).NotTo(HaveOccurred())
+	reader := io.NopCloser(strings.NewReader(string(bytes)))
+	return reader
+}
+
+func createNote(note models.Note, db database.Database) models.Note {
+	r := buildReader(note)
+	note, err := db.Create(r)
+	Expect(err).NotTo(HaveOccurred())
+	return note
+}
