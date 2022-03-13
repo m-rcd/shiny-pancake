@@ -37,10 +37,10 @@ func (s *SQL) Open() error {
 	if err != nil {
 		return err
 	}
+
 	s.Db = db
 
-	_, err = s.Db.Exec(CreateNoteTable)
-	if err != nil {
+	if _, err := s.Db.Exec(CreateNoteTable); err != nil {
 		return err
 	}
 
@@ -53,12 +53,16 @@ func (s *SQL) Close() error {
 
 func (s *SQL) Create(body io.ReadCloser) (models.Note, error) {
 	var note models.Note
+
 	reqBody, err := ioutil.ReadAll(body)
 	if err != nil {
 		return models.Note{}, err
 	}
 
-	json.Unmarshal(reqBody, &note)
+	if err := json.Unmarshal(reqBody, &note); err != nil {
+		return models.Note{}, err
+	}
+
 	sql := fmt.Sprintf("INSERT INTO notes(name, content, username, archived) VALUES ('%s', '%s', '%s', '%v')", note.Name, note.Content, note.User.Username, 0)
 	savedNote, err := s.Db.Exec(sql)
 	if err != nil {
@@ -88,7 +92,10 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 	if err != nil {
 		return models.Note{}, err
 	}
-	json.Unmarshal(reqBody, &note)
+
+	if err := json.Unmarshal(reqBody, &note); err != nil {
+		return models.Note{}, err
+	}
 
 	if !utils.IsSet(note.Name) {
 		note.Name = existingNote.Name
@@ -97,15 +104,18 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 	if !utils.IsSet(note.Content) {
 		note.Content = existingNote.Content
 	}
+
 	if !utils.IsSet(note.User.Username) {
 		note.User = existingNote.User
 	}
+
 	note.Id = id
 
 	if note.Archived {
 		if err := archive(s, note); err != nil {
 			return models.Note{}, err
 		}
+
 		return note, nil
 	}
 
@@ -113,11 +123,11 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 		if err := unarchive(s, note); err != nil {
 			return models.Note{}, err
 		}
+
 		return note, nil
 	}
 
-	_, err = s.Db.Exec("UPDATE notes set name=?, content=?, archived=? where id=?", note.Name, note.Content, 0, id)
-	if err != nil {
+	if _, err := s.Db.Exec("UPDATE notes set name=?, content=?, archived=? where id=?", note.Name, note.Content, 0, id); err != nil {
 		return models.Note{}, err
 	}
 
@@ -125,10 +135,10 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 }
 
 func (s *SQL) Delete(id string, body io.ReadCloser) error {
-	_, err := s.Db.Exec("DELETE FROM notes WHERE id = ?", id)
-	if err != nil {
+	if _, err := s.Db.Exec("DELETE FROM notes WHERE id = ?", id); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -163,8 +173,7 @@ func (s *SQL) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {
 }
 
 func archive(s *SQL, note models.Note) error {
-	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 1, note.Id)
-	if err != nil {
+	if _, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 1, note.Id); err != nil {
 		return err
 	}
 
@@ -172,8 +181,7 @@ func archive(s *SQL, note models.Note) error {
 }
 
 func unarchive(s *SQL, note models.Note) error {
-	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 0, note.Id)
-	if err != nil {
+	if _, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 0, note.Id); err != nil {
 		return err
 	}
 
@@ -181,15 +189,17 @@ func unarchive(s *SQL, note models.Note) error {
 }
 
 func listNotes(result *sql.Rows) ([]models.Note, error) {
-	var notes []models.Note
-	var note models.Note
+	var (
+		notes []models.Note
+		note  models.Note
+	)
 
 	for result.Next() {
-		err := result.Scan(&note.Id, &note.Name, &note.Content, &note.Archived, &note.User.Username)
-		if err != nil {
+		if err := result.Scan(&note.Id, &note.Name, &note.Content, &note.Archived, &note.User.Username); err != nil {
 			return []models.Note{}, err
 		}
 		notes = append(notes, note)
 	}
+
 	return notes, nil
 }

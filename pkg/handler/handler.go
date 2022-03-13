@@ -51,8 +51,8 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	var response responses.JsonNoteResponse
 
+	var response responses.JsonNoteResponse
 	err := h.db.Delete(id, r.Body)
 	if err != nil {
 		response = responses.Failure(err.Error())

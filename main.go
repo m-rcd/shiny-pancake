@@ -18,11 +18,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var (
-	db database.Database
-	h  handler.Handler
-)
-
 func main() {
 	fmt.Println("Listening on port 10000")
 
@@ -47,11 +42,12 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
+
 	handleRequests(db)
 }
 
 func handleRequests(db database.Database) {
-	h = handler.New(db)
+	h := handler.New(db)
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/", h.HomePage)
 	myRouter.HandleFunc("/note", h.CreateNewNote).Methods("POST")
@@ -64,6 +60,8 @@ func handleRequests(db database.Database) {
 }
 
 func getDb(storage, workDir string) database.Database {
+	var db database.Database
+
 	switch storage {
 	case "sql":
 		username := os.Getenv("DB_USERNAME")

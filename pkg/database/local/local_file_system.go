@@ -35,6 +35,7 @@ func (l *LocalFileSystem) Close() error {
 
 func (l *LocalFileSystem) Create(body io.ReadCloser) (models.Note, error) {
 	var note models.Note
+
 	reqBody, err := ioutil.ReadAll(body)
 	if err != nil {
 		return note, err
@@ -66,6 +67,7 @@ func (l *LocalFileSystem) Create(body io.ReadCloser) (models.Note, error) {
 
 func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, error) {
 	var note models.Note
+
 	reqBody, err := ioutil.ReadAll(body)
 	if err != nil {
 		return note, err
@@ -78,7 +80,7 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 	note.Id = id
 
 	if note.Archived {
-		archivedNote, err := Archive(l.workDir, note)
+		archivedNote, err := archive(l.workDir, note)
 		if err != nil {
 			return note, err
 		}
@@ -88,7 +90,7 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 
 	dir := fmt.Sprintf("%s/%s/", l.workDir, note.User.Username)
 	if archived(dir, id) {
-		activeNote, err := Unarchive(l.workDir, note)
+		activeNote, err := unarchive(l.workDir, note)
 		if err != nil {
 			return note, err
 		}
@@ -149,7 +151,7 @@ func (l *LocalFileSystem) ListActiveNotes(body io.ReadCloser) ([]models.Note, er
 		return []models.Note{}, err
 	}
 
-	notes, err := ListNotes(dir, files, user, false)
+	notes, err := listNotes(dir, files, user, false)
 	if err != nil {
 		return []models.Note{}, err
 	}
@@ -174,7 +176,7 @@ func (l *LocalFileSystem) ListArchivedNotes(body io.ReadCloser) ([]models.Note, 
 		return []models.Note{}, err
 	}
 
-	notes, err := ListNotes(dir, files, user, true)
+	notes, err := listNotes(dir, files, user, true)
 	if err != nil {
 		return []models.Note{}, err
 	}
@@ -182,7 +184,7 @@ func (l *LocalFileSystem) ListArchivedNotes(body io.ReadCloser) ([]models.Note, 
 	return notes, nil
 }
 
-func ListNotes(dir string, files []fs.FileInfo, user models.User, archived bool) ([]models.Note, error) {
+func listNotes(dir string, files []fs.FileInfo, user models.User, archived bool) ([]models.Note, error) {
 	notes := []models.Note{}
 	for _, file := range files {
 		path := fmt.Sprintf("%s/%s", dir, file.Name())
@@ -209,7 +211,7 @@ func ListNotes(dir string, files []fs.FileInfo, user models.User, archived bool)
 	return notes, nil
 }
 
-func Archive(dir string, note models.Note) (models.Note, error) {
+func archive(dir string, note models.Note) (models.Note, error) {
 	oldPath := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
 	newPath := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)
 	archivedNote, err := moveNote(note, oldPath, newPath)
@@ -220,7 +222,7 @@ func Archive(dir string, note models.Note) (models.Note, error) {
 	return archivedNote, nil
 }
 
-func Unarchive(dir string, note models.Note) (models.Note, error) {
+func unarchive(dir string, note models.Note) (models.Note, error) {
 	oldPath := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)
 	newPath := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
 
