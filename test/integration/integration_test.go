@@ -27,6 +27,7 @@ var _ = Describe("Integration", func() {
 			resp, err := c.Post("http://localhost:10000/note", "application/json", postData)
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
+
 			body, err := ioutil.ReadAll(resp.Body)
 			Expect(err).NotTo(HaveOccurred())
 			var response responses.JsonNoteResponse
@@ -41,6 +42,7 @@ var _ = Describe("Integration", func() {
 	Context("PATCH request", func() {
 		var path string
 		var note models.Note
+
 		BeforeEach(func() {
 			c := http.Client{}
 			postData := bytes.NewBuffer([]byte(`{"name":"note1","content":"I am a new note!","user":{"username":"Pantalaimon"}}`))
@@ -136,6 +138,7 @@ var _ = Describe("Integration", func() {
 			path = fmt.Sprintf("/tmp/notes/Pantalaimon/active/note1_%s.txt", note.Id)
 			Expect(path).To(BeAnExistingFile())
 		})
+
 		AfterEach(func() {
 			os.RemoveAll("/tmp/notes")
 		})

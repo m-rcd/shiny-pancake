@@ -10,6 +10,8 @@ require (
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/joho/godotenv v1.4.0 // indirect
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect

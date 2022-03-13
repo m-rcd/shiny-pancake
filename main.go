@@ -7,7 +7,11 @@ import (
 	"net/http"
 	"os"
 
+	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/m-rcd/notes/pkg/database"
+	"github.com/m-rcd/notes/pkg/database/local"
+	"github.com/m-rcd/notes/pkg/database/sql"
 	"github.com/m-rcd/notes/pkg/handler"
 
 	"github.com/gorilla/mux"
@@ -21,12 +25,32 @@ var (
 
 func main() {
 	fmt.Println("Listening on port 10000")
-	var workDir string
 
+	var storage string
+	flag.StringVar(&storage, "db", "local", "store notes on the local filesystem or in an SQL database (default: local)")
+	flag.Parse()
+
+	var workDir string
 	flag.StringVar(&workDir, "directory", "/tmp", "notes location when `--db` set to `local` (default: /tmp)")
 	flag.Parse()
 
-	db = database.NewLocalFileSystem(workDir)
+	switch storage {
+	case "sql":
+		username := os.Getenv("DB_USERNAME")
+		if username == "" {
+			fmt.Println("DB_USERNAME must be set")
+			os.Exit(1)
+		}
+		password := os.Getenv("DB_PASSWORD")
+		if password == "" {
+			fmt.Println("DB_PASSWORD must be set")
+			os.Exit(1)
+		}
+		db = sql.NewSQL(username, password, "127.0.0.1", "3306")
+	default:
+		db = local.NewLocalFileSystem(workDir)
+	}
+
 	err = db.Open()
 	if err != nil {
 		fmt.Println(err)

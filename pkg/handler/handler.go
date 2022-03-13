@@ -13,36 +13,39 @@ import (
 
 type Handler struct {
 	db database.Database
+	r  *responses.NoteResponder
 }
 
-var noteResponse = responses.NewNoteResponse()
-var response responses.JsonNoteResponse
-
 func New(db database.Database) Handler {
-	return Handler{db: db}
+	return Handler{
+		db: db,
+		r:  responses.NewNoteResponder(),
+	}
 }
 
 func (h *Handler) CreateNewNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	var response responses.JsonNoteResponse
 	newNote, err := h.db.Create(r.Body)
-
 	if err != nil {
-		response = noteResponse.Failure(err.Error())
+		response = h.r.Failure(err.Error())
 	} else {
-		response = noteResponse.Success([]models.Note{newNote}, "The note was successfully created")
+		response = h.r.Success([]models.Note{newNote}, "The note was successfully created")
 	}
+
 	json.NewEncoder(w).Encode(response)
 }
 
 func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
+	var response responses.JsonNoteResponse
 	note, err := h.db.Update(id, r.Body)
 	if err != nil {
-		response = noteResponse.Failure(err.Error())
+		response = h.r.Failure(err.Error())
 	} else {
-		response = noteResponse.Success([]models.Note{note}, "The note was successfully updated")
+		response = h.r.Success([]models.Note{note}, "The note was successfully updated")
 	}
 
 	json.NewEncoder(w).Encode(response)
@@ -50,21 +53,24 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
+	var response responses.JsonNoteResponse
 
 	err := h.db.Delete(id, r.Body)
 	if err != nil {
-		response = noteResponse.Failure(err.Error())
+		response = h.r.Failure(err.Error())
 	} else {
-		response = noteResponse.Success([]models.Note{}, "The note was successfully deleted")
+		response = h.r.Success([]models.Note{}, "The note was successfully deleted")
 	}
 
 	json.NewEncoder(w).Encode(response)
 }
 
 func (h *Handler) ListActiveNotes(w http.ResponseWriter, r *http.Request) {
+	var response responses.JsonNoteResponse
+
 	notes, err := h.db.ListActiveNotes(r.Body)
 	if err != nil {
-		response = noteResponse.Failure(err.Error())
+		response = h.r.Failure(err.Error())
 		json.NewEncoder(w).Encode(response)
 	} else {
 		json.NewEncoder(w).Encode(notes)
@@ -72,9 +78,11 @@ func (h *Handler) ListActiveNotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListArchivedNotes(w http.ResponseWriter, r *http.Request) {
+	var response responses.JsonNoteResponse
+
 	notes, err := h.db.ListArchivedNotes(r.Body)
 	if err != nil {
-		response = noteResponse.Failure(err.Error())
+		response = h.r.Failure(err.Error())
 		json.NewEncoder(w).Encode(response)
 	} else {
 		json.NewEncoder(w).Encode(notes)

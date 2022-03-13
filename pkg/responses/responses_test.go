@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("Responses", func() {
-	response := responses.NewNoteResponse()
+	responder := responses.NewNoteResponder()
 
 	Context("success", func() {
 		It("returns a json response", func() {
@@ -18,7 +18,7 @@ var _ = Describe("Responses", func() {
 			data := []models.Note{note}
 
 			expectedResponse := responses.JsonNoteResponse{Type: "success", StatusCode: 200, Data: data, Message: message}
-			Expect(response.Success(data, message)).To(Equal(expectedResponse))
+			Expect(responder.Success(data, message)).To(Equal(expectedResponse))
 		})
 	})
 
@@ -27,7 +27,7 @@ var _ = Describe("Responses", func() {
 			message := "Note not created"
 
 			expectedResponse := responses.JsonNoteResponse{Type: "failed", StatusCode: 500, Data: []models.Note{}, Message: message}
-			Expect(response.Failure(message)).To(Equal(expectedResponse))
+			Expect(responder.Failure(message)).To(Equal(expectedResponse))
 		})
 	})
 })

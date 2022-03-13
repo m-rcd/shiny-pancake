@@ -9,20 +9,17 @@ type JsonNoteResponse struct {
 	Message    string        `json:"message"`
 }
 
-type NoteResponse struct {
-	Response JsonNoteResponse
+type NoteResponder struct {
 }
 
-func NewNoteResponse() *NoteResponse {
-	return &NoteResponse{}
+func NewNoteResponder() *NoteResponder {
+	return &NoteResponder{}
 }
 
-func (b *NoteResponse) Failure(message string) JsonNoteResponse {
-	b.Response = JsonNoteResponse{Type: "failed", StatusCode: 500, Data: []models.Note{}, Message: message}
-	return b.Response
+func (b *NoteResponder) Failure(message string) JsonNoteResponse {
+	return JsonNoteResponse{Type: "failed", StatusCode: 500, Data: []models.Note{}, Message: message}
 }
 
-func (b *NoteResponse) Success(data []models.Note, message string) JsonNoteResponse {
-	b.Response = JsonNoteResponse{Type: "success", StatusCode: 200, Data: data, Message: message}
-	return b.Response
+func (b *NoteResponder) Success(data []models.Note, message string) JsonNoteResponse {
+	return JsonNoteResponse{Type: "success", StatusCode: 200, Data: data, Message: message}
 }
