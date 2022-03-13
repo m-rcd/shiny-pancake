@@ -96,7 +96,7 @@ var _ = Describe("LocalFileSystem", func() {
 					r := buildReader(note)
 
 					_, err = db.Update(existingNote.Id, r)
-					Expect(err).To(MatchError("file does not exist"))
+					Expect(err).To(MatchError(ContainSubstring("file does not exist")))
 					filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
 					content, err := os.ReadFile(filepath)
 					Expect(err).NotTo(HaveOccurred())
@@ -159,7 +159,7 @@ var _ = Describe("LocalFileSystem", func() {
 				r := buildReader(user)
 
 				err = db.Delete("123", r)
-				Expect(err).To(MatchError("file does not exist"))
+				Expect(err).To(MatchError(ContainSubstring("file does not exist")))
 				filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
 
 				Expect(filepath).To(BeAnExistingFile())
