@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/m-rcd/notes/pkg/models"
+	"github.com/m-rcd/notes/pkg/utils"
 	uuid "github.com/nu7hatch/gouuid"
 )
 
@@ -261,11 +262,11 @@ func moveNote(note models.Note, from, to string) (models.Note, error) {
 }
 
 func validateNote(note models.Note) error {
-	if !isSet(note.Name) {
+	if !utils.IsSet(note.Name) {
 		return errors.New("name must be set")
 	}
 
-	if !isSet(note.User.Username) {
+	if !utils.IsSet(note.User.Username) {
 		return errors.New("user must be set")
 	}
 
@@ -278,10 +279,6 @@ func validateFileExists(path string) error {
 	}
 
 	return nil
-}
-
-func isSet(attr string) bool {
-	return attr != ""
 }
 
 func newId() string {
@@ -305,7 +302,7 @@ func findFile(dir string, id string) (string, error) {
 		}
 	}
 
-	if fileName == "" {
+	if !utils.IsSet(fileName) {
 		return "", errors.New("file does not exist")
 	}
 
@@ -318,5 +315,5 @@ func archived(dir string, id string) bool {
 		return false
 	}
 
-	return file != ""
+	return utils.IsSet(file)
 }

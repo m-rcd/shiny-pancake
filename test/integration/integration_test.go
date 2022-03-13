@@ -277,6 +277,27 @@ var _ = Describe("When running the note server", func() {
 				return nil
 			}, "20s").Should(Succeed())
 
+			By("updating a note")
+			Eventually(func(g Gomega) error {
+				patchData := bytes.NewBuffer([]byte(`{"name":"note1","content":"I am updated!","user":{"username":"Pantalaimon"}}`))
+				req, err := http.NewRequest("PATCH", "http://localhost:10000/note/"+note1.Id, patchData)
+				g.Expect(err).NotTo(HaveOccurred())
+				resp, err := c.Do(req)
+				g.Expect(err).NotTo(HaveOccurred())
+				body, err := ioutil.ReadAll(resp.Body)
+				g.Expect(err).NotTo(HaveOccurred())
+				defer req.Body.Close()
+
+				var response responses.JsonNoteResponse
+				json.Unmarshal(body, &response)
+				g.Expect(response.Type).To(Equal("success"))
+				g.Expect(response.StatusCode).To(Equal(200))
+				g.Expect(response.Message).To(Equal("The note was successfully updated"))
+				note1 = response.Data[0]
+				g.Expect(note1.Content).To(Equal("I am updated!"))
+
+				return nil
+			}, "20s").Should(Succeed())
 		})
 	})
 })

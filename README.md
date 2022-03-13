@@ -145,7 +145,11 @@ The API have the following key features:
     }
     ```
 
-    SQL storage not supported for this action yet.
+    **Local Storage System**
+    The content of `/tmp/notes/Sabriel/active/note1_4ac82864-0354-43af-5582-fc721dfc4cf4.txt` will be updated to "I am updated!".
+
+    **SQL**
+    The record will be updated in the database with the new data sent in the request.
 
 1. Delete a saved note
 
@@ -303,7 +307,7 @@ One, it will allow a developer to use the app without having to setup the databa
 ## Todo
 
 - [ ] Add Makefile
-- [x] Test for SQL 
+- [ ] Test for SQL 
 - [ ] Add SQL support for all request
 - [ ] Refactor integration test to be table test once SQL is working
 - [ ] Add logging to help debugging in the case of server errors

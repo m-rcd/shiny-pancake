@@ -11,6 +11,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/m-rcd/notes/pkg/models"
+	"github.com/m-rcd/notes/pkg/utils"
 )
 
 type SQL struct {
@@ -75,7 +76,34 @@ func (s *SQL) Create(body io.ReadCloser) (models.Note, error) {
 }
 
 func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
-	return models.Note{}, nil
+	var existingNote models.Note
+
+	result := s.Db.QueryRow("SELECT id, name, content, archived FROM notes WHERE id=" + id)
+	if err := result.Scan(&existingNote.Id, &existingNote.Name, &existingNote.Content, &existingNote.Archived); err != nil {
+		return models.Note{}, err
+	}
+
+	var note models.Note
+	reqBody, err := ioutil.ReadAll(body)
+	if err != nil {
+		return models.Note{}, err
+	}
+	json.Unmarshal(reqBody, &note)
+
+	if !utils.IsSet(note.Name) {
+		note.Name = existingNote.Name
+	}
+
+	if !utils.IsSet(note.Content) {
+		note.Content = existingNote.Content
+	}
+
+	_, err = s.Db.Exec("UPDATE notes set name=?, content=?, archived=? where id=?", note.Name, note.Content, 0, id)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	return note, nil
 }
 
 func (s *SQL) Delete(id string, body io.ReadCloser) error {

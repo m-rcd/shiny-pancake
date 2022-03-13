@@ -13,6 +13,7 @@ import (
 	"github.com/m-rcd/notes/pkg/database/local"
 	"github.com/m-rcd/notes/pkg/database/sql"
 	"github.com/m-rcd/notes/pkg/handler"
+	"github.com/m-rcd/notes/pkg/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -66,12 +67,12 @@ func getDb(storage, workDir string) database.Database {
 	switch storage {
 	case "sql":
 		username := os.Getenv("DB_USERNAME")
-		if username == "" {
+		if !utils.IsSet(username) {
 			fmt.Println("DB_USERNAME must be set")
 			os.Exit(1)
 		}
 		password := os.Getenv("DB_PASSWORD")
-		if password == "" {
+		if !utils.IsSet(password) {
 			fmt.Println("DB_PASSWORD must be set")
 			os.Exit(1)
 		}
