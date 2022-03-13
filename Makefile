@@ -1,13 +1,17 @@
-BIN_DIR := bin
-HT_CMD := .
-
 .PHONY: build
 build: ## Build notes
 	go build -o notes main.go
 
 .PHONY: test
-test: ## Run tests
-	ginkgo -r -v
+test: int unit ## Run all tests
+
+.PHONY: int 
+int: ## Run integration tests
+	ginkgo -r -v test/
+
+.PHONY: unit 
+unit: ## Run unit tests
+	ginkgo -r pkg/
 
 .PHONY: help
 help:  ## Display this help. Thanks to https://www.thapaliya.com/en/writings/well-documented-makefiles/
