@@ -302,23 +302,27 @@ The API have the following key features:
 
 To run all tests: 
 
-`DB_USERNAME` and `DB_PASSWORD` should be set in an `.env` file.
-
 ```shell
 make test
 ```
+
+This will run both integration and unit tests.
+
+Some of the integration tests require a running SQL server to be started and configured beforehand.
+To run these tests, export the `DB_USERNAME` and `DB_PASSWORD` in a `.env` file at the root of the directory. If these are not set then the tests will be skipped.
 
 ## Approach
 
 - I have opted to initially complete the API using a local storage instead of a SQL database for two reasons. 
 One, it will allow a developer to use the app without having to setup the database before hand. Two, it allowed me to focus on the structure of my code. However, I implemented it using an interface so that once I have the structure completed, I can easily use that interface to plug in a database.
 
-## Todo
+## Further Development
 
 - [x] Add Makefile
 - [x] Test for SQL 
-- [x] Add SQL support for all request
-- [ ] Refactor integration test to be table test once SQL is working
+- [x] Add SQL support for all requests
+- [x] Refactor integration test to be table test once SQL is working
+- [ ] Start SQL server as part of BeforeEach in integration tests
 - [ ] Add logging to help debugging in the case of server errors
 - [ ] Add graceful shutdown
 - [ ] User Auth

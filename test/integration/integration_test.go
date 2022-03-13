@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/m-rcd/notes/pkg/models"
 	"github.com/m-rcd/notes/pkg/responses"
+	"github.com/m-rcd/notes/pkg/utils"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/extensions/table"
@@ -42,20 +43,23 @@ var _ = Describe("When running the note server", func() {
 	sqlArgsBuilder := func() []string {
 		return []string{"--db", "sql"}
 	}
-	table.DescribeTable("the user can manipulate notes", func(getArgs func() []string) {
-		c := http.Client{}
 
+	table.DescribeTable("the user can manipulate notes", func(getArgs func() []string) {
 		var (
+			err     error
 			session *gexec.Session
 			note1   models.Note
 			note2   models.Note
+
+			c    = http.Client{}
+			args = getArgs()
 		)
 
-		args := getArgs()
+		if databaseNotRunning(args[1]) {
+			Skip("skipped because SQL database not set and running")
+		}
 
 		command := exec.Command(cliBin, args...)
-
-		var err error
 		session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -250,3 +254,10 @@ var _ = Describe("When running the note server", func() {
 		table.Entry("sql", sqlArgsBuilder),
 	)
 })
+
+func databaseNotRunning(storage string) bool {
+	username := os.Getenv("DB_USERNAME")
+	password := os.Getenv("DB_PASSWORD")
+
+	return storage == "sql" && (!utils.IsSet(username) || !utils.IsSet(password))
+}
