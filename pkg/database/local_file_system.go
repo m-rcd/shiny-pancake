@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -35,8 +36,12 @@ func (l *LocalFileSystem) Close() error {
 	return nil
 }
 
+var (
+	note models.Note
+	user models.User
+)
+
 func (l *LocalFileSystem) Create(body io.ReadCloser) (models.Note, error) {
-	var note models.Note
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &note)
 	note.Id = newId()
@@ -60,7 +65,6 @@ func (l *LocalFileSystem) Create(body io.ReadCloser) (models.Note, error) {
 }
 
 func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, error) {
-	var note models.Note
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &note)
 	note.Id = id
@@ -106,7 +110,6 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 }
 
 func (l *LocalFileSystem) Delete(id string, body io.ReadCloser) error {
-	var user models.User
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &user)
 	fileName, err := findFile(fmt.Sprintf("%s/%s/active/", l.workDir, user.Username), id)
@@ -122,51 +125,45 @@ func (l *LocalFileSystem) Delete(id string, body io.ReadCloser) error {
 }
 
 func (l *LocalFileSystem) ListActiveNotes(body io.ReadCloser) ([]models.Note, error) {
-	var user models.User
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &user)
-	notes := []models.Note{}
+
 	dir := fmt.Sprintf("%s/%s/active/", l.workDir, user.Username)
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return []models.Note{}, err
 	}
-	for _, file := range files {
-		path := fmt.Sprintf("%s/%s", dir, file.Name())
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return []models.Note{}, err
-		}
 
-		note := models.Note{
-			User:    user,
-			Id:      strings.Split(strings.Split(file.Name(), "_")[1], ".")[0],
-			Name:    strings.Split(file.Name(), "_")[0],
-			Content: string(content),
-		}
-		err = validateNote(note)
-		if err != nil {
-			return []models.Note{}, err
-		}
-
-		notes = append(notes, note)
+	notes, err := ListNotes(dir, files, user, false)
+	if err != nil {
+		return []models.Note{}, err
 	}
+
 	return notes, nil
 }
 
 func (l *LocalFileSystem) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {
-	var user models.User
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &user)
-	notes := []models.Note{}
 	dir := fmt.Sprintf("%s/%s/archived/", l.workDir, user.Username)
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return []models.Note{}, err
 	}
+	notes, err := ListNotes(dir, files, user, true)
+	if err != nil {
+		return []models.Note{}, err
+	}
+
+	return notes, nil
+}
+
+func ListNotes(dir string, files []fs.FileInfo, user models.User, archived bool) ([]models.Note, error) {
+	notes := []models.Note{}
 	for _, file := range files {
 		path := fmt.Sprintf("%s/%s", dir, file.Name())
 		content, err := os.ReadFile(path)
+
 		if err != nil {
 			return []models.Note{}, err
 		}
@@ -176,7 +173,7 @@ func (l *LocalFileSystem) ListArchivedNotes(body io.ReadCloser) ([]models.Note, 
 			Id:       strings.Split(strings.Split(file.Name(), "_")[1], ".")[0],
 			Name:     strings.Split(file.Name(), "_")[0],
 			Content:  string(content),
-			Archived: true,
+			Archived: archived,
 		}
 		err = validateNote(note)
 		if err != nil {
