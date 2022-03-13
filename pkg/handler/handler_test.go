@@ -155,4 +155,28 @@ var _ = Describe("Handler", func() {
 			})
 		})
 	})
+
+	Context("#ListActiveNotes", func() {
+		It("handles GET request", func() {
+			fake_db := new(databasefakes.FakeDatabase)
+
+			data := bytes.NewBuffer([]byte(`{"username":"Buffy"}`))
+			req, err := http.NewRequest("GET", "http://localhost:10000/notes/active", data)
+			Expect(err).NotTo(HaveOccurred())
+			r := httptest.NewRecorder()
+			h := handler.New(fake_db)
+
+			note1 := models.Note{Id: "1", Name: "Vampires", Content: "I SLAY A LOT", User: models.User{Username: "Buffy"}}
+			note2 := models.Note{Id: "2", Name: "Monsters", Content: "I EAT THEM", User: models.User{Username: "Buffy"}}
+
+			fake_db.ListActiveNotesReturns([]models.Note{note1, note2}, nil)
+			h.ListActiveNotes(r, req)
+			Expect(fake_db.ListActiveNotesCallCount()).To(Equal(1))
+			var list []models.Note
+			json.Unmarshal(r.Body.Bytes(), &list)
+			Expect(len(list)).To(Equal(2))
+			Expect(list[0]).To(Equal(note1))
+			Expect(list[1]).To(Equal(note2))
+		})
+	})
 })

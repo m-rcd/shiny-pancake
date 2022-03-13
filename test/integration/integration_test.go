@@ -152,4 +152,48 @@ var _ = Describe("Integration", func() {
 			Expect("/tmp/notes/Pantalaimon/active/note1.txt").NotTo(BeAnExistingFile())
 		})
 	})
+
+	Context("GET request", func() {
+		var note1 models.Note
+		var note2 models.Note
+		BeforeEach(func() {
+			c := http.Client{}
+			postData1 := bytes.NewBuffer([]byte(`{"name":"note1","content":"I am a new note!","user":{"username":"Pantalaimon"}}`))
+			resp1, err := c.Post("http://localhost:10000/note", "application/json", postData1)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp1.Body.Close()
+			body1, err := ioutil.ReadAll(resp1.Body)
+			Expect(err).NotTo(HaveOccurred())
+			var response1 responses.JsonNoteResponse
+			json.Unmarshal(body1, &response1)
+			note1 = response1.Data[0]
+
+			postData2 := bytes.NewBuffer([]byte(`{"name":"note2","content":"I am another note!","user":{"username":"Pantalaimon"}}`))
+			resp2, err := c.Post("http://localhost:10000/note", "application/json", postData2)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp2.Body.Close()
+			body2, err := ioutil.ReadAll(resp2.Body)
+			Expect(err).NotTo(HaveOccurred())
+			var response2 responses.JsonNoteResponse
+			json.Unmarshal(body2, &response2)
+			note2 = response2.Data[0]
+		})
+
+		It("lists active notes for user", func() {
+			c := http.Client{}
+			data := bytes.NewBuffer([]byte(`{"username":"Pantalaimon"}`))
+			req, err := http.NewRequest("GET", "http://localhost:10000/notes/active", data)
+			Expect(err).NotTo(HaveOccurred())
+			resp, _ := c.Do(req)
+			body, err := ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			defer req.Body.Close()
+
+			var list []models.Note
+			json.Unmarshal(body, &list)
+			Expect(len(list)).To(Equal(2))
+			Expect(list[0]).To(Equal(note1))
+			Expect(list[1]).To(Equal(note2))
+		})
+	})
 })

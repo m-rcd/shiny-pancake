@@ -45,6 +45,19 @@ type FakeDatabase struct {
 	deleteReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ListActiveNotesStub        func(io.ReadCloser) ([]models.Note, error)
+	listActiveNotesMutex       sync.RWMutex
+	listActiveNotesArgsForCall []struct {
+		arg1 io.ReadCloser
+	}
+	listActiveNotesReturns struct {
+		result1 []models.Note
+		result2 error
+	}
+	listActiveNotesReturnsOnCall map[int]struct {
+		result1 []models.Note
+		result2 error
+	}
 	OpenStub        func() error
 	openMutex       sync.RWMutex
 	openArgsForCall []struct {
@@ -252,6 +265,70 @@ func (fake *FakeDatabase) DeleteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeDatabase) ListActiveNotes(arg1 io.ReadCloser) ([]models.Note, error) {
+	fake.listActiveNotesMutex.Lock()
+	ret, specificReturn := fake.listActiveNotesReturnsOnCall[len(fake.listActiveNotesArgsForCall)]
+	fake.listActiveNotesArgsForCall = append(fake.listActiveNotesArgsForCall, struct {
+		arg1 io.ReadCloser
+	}{arg1})
+	stub := fake.ListActiveNotesStub
+	fakeReturns := fake.listActiveNotesReturns
+	fake.recordInvocation("ListActiveNotes", []interface{}{arg1})
+	fake.listActiveNotesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeDatabase) ListActiveNotesCallCount() int {
+	fake.listActiveNotesMutex.RLock()
+	defer fake.listActiveNotesMutex.RUnlock()
+	return len(fake.listActiveNotesArgsForCall)
+}
+
+func (fake *FakeDatabase) ListActiveNotesCalls(stub func(io.ReadCloser) ([]models.Note, error)) {
+	fake.listActiveNotesMutex.Lock()
+	defer fake.listActiveNotesMutex.Unlock()
+	fake.ListActiveNotesStub = stub
+}
+
+func (fake *FakeDatabase) ListActiveNotesArgsForCall(i int) io.ReadCloser {
+	fake.listActiveNotesMutex.RLock()
+	defer fake.listActiveNotesMutex.RUnlock()
+	argsForCall := fake.listActiveNotesArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeDatabase) ListActiveNotesReturns(result1 []models.Note, result2 error) {
+	fake.listActiveNotesMutex.Lock()
+	defer fake.listActiveNotesMutex.Unlock()
+	fake.ListActiveNotesStub = nil
+	fake.listActiveNotesReturns = struct {
+		result1 []models.Note
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeDatabase) ListActiveNotesReturnsOnCall(i int, result1 []models.Note, result2 error) {
+	fake.listActiveNotesMutex.Lock()
+	defer fake.listActiveNotesMutex.Unlock()
+	fake.ListActiveNotesStub = nil
+	if fake.listActiveNotesReturnsOnCall == nil {
+		fake.listActiveNotesReturnsOnCall = make(map[int]struct {
+			result1 []models.Note
+			result2 error
+		})
+	}
+	fake.listActiveNotesReturnsOnCall[i] = struct {
+		result1 []models.Note
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeDatabase) Open() error {
 	fake.openMutex.Lock()
 	ret, specificReturn := fake.openReturnsOnCall[len(fake.openArgsForCall)]
@@ -379,6 +456,8 @@ func (fake *FakeDatabase) Invocations() map[string][][]interface{} {
 	defer fake.createMutex.RUnlock()
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
+	fake.listActiveNotesMutex.RLock()
+	defer fake.listActiveNotesMutex.RUnlock()
 	fake.openMutex.RLock()
 	defer fake.openMutex.RUnlock()
 	fake.updateMutex.RLock()

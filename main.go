@@ -49,6 +49,7 @@ func handleRequests(db database.Database) {
 	myRouter.HandleFunc("/note", h.CreateNewNote).Methods("POST")
 	myRouter.HandleFunc("/note/{id}", h.UpdateNote).Methods("PATCH")
 	myRouter.HandleFunc("/note/{id}", h.DeleteNote).Methods("DELETE")
+	myRouter.HandleFunc("/notes/active", h.ListActiveNotes).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }

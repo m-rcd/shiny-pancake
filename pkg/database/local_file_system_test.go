@@ -185,7 +185,7 @@ var _ = Describe("LocalFileSystem", func() {
 		})
 	})
 
-	Context("Delete", func() {
+	Context("DELETE", func() {
 		var existingNote models.Note
 		BeforeEach(func() {
 			db = database.NewLocalFileSystem(tempDir)
@@ -355,6 +355,53 @@ var _ = Describe("LocalFileSystem", func() {
 				Expect(updatedNote.Content).To(Equal(archivedNote.Content))
 			})
 
+		})
+	})
+
+	Context("LISTACTIVENOTES", func() {
+		var note1 models.Note
+		var note2 models.Note
+
+		BeforeEach(func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			noteData1 := models.Note{Name: "Note1", Content: "Kirjava", User: models.User{Username: "Lyra"}}
+
+			noteBytes1, err := json.Marshal(noteData1)
+			Expect(err).NotTo(HaveOccurred())
+			r1 := io.NopCloser(strings.NewReader(string(noteBytes1)))
+
+			note1, err = db.Create(r1)
+			Expect(err).NotTo(HaveOccurred())
+
+			noteData2 := models.Note{Name: "Note2", Content: "Pantalaimon", User: models.User{Username: "Lyra"}}
+
+			noteBytes2, err := json.Marshal(noteData2)
+			Expect(err).NotTo(HaveOccurred())
+			r2 := io.NopCloser(strings.NewReader(string(noteBytes2)))
+
+			note2, err = db.Create(r2)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns a list of active notes", func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			user := models.User{Username: "Lyra"}
+
+			userBytes, err := json.Marshal(user)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(userBytes)))
+
+			notes, err := db.ListActiveNotes(r)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(notes)).To(Equal(2))
+			Expect(notes[0]).To(Equal(note1))
+			Expect(notes[1]).To(Equal(note2))
 		})
 	})
 
