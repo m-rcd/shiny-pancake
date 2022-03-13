@@ -18,47 +18,31 @@ import (
 )
 
 var (
-	db  database.Database
-	err error
-	h   handler.Handler
+	db database.Database
+	h  handler.Handler
 )
 
 func main() {
 	fmt.Println("Listening on port 10000")
 
-	var storage string
-	var workDir string
-	flag.StringVar(&storage, "db", "local", "store notes on the local filesystem or in an SQL database (default: local)")
+	var (
+		storage string
+		workDir string
+	)
 
+	flag.StringVar(&storage, "db", "local", "store notes on the local filesystem or in an SQL database (default: local)")
 	flag.StringVar(&workDir, "directory", "/tmp", "notes location when `--db` set to `local` (default: /tmp)")
 	flag.Parse()
 
-	switch storage {
-	case "sql":
-		username := os.Getenv("DB_USERNAME")
-		if username == "" {
-			fmt.Println("DB_USERNAME must be set")
-			os.Exit(1)
-		}
-		password := os.Getenv("DB_PASSWORD")
-		if password == "" {
-			fmt.Println("DB_PASSWORD must be set")
-			os.Exit(1)
-		}
-		db = sql.NewSQL(username, password, "127.0.0.1", "3306")
-	default:
-		db = local.NewLocalFileSystem(workDir)
-	}
+	db := getDb(storage, workDir)
 
-	err = db.Open()
-	if err != nil {
+	if err := db.Open(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	defer func() {
-		err := db.Close()
-		if err != nil {
+		if err := db.Close(); err != nil {
 			fmt.Println(err)
 		}
 	}()
@@ -76,4 +60,25 @@ func handleRequests(db database.Database) {
 	myRouter.HandleFunc("/notes/archived", h.ListArchivedNotes).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
+}
+
+func getDb(storage, workDir string) database.Database {
+	switch storage {
+	case "sql":
+		username := os.Getenv("DB_USERNAME")
+		if username == "" {
+			fmt.Println("DB_USERNAME must be set")
+			os.Exit(1)
+		}
+		password := os.Getenv("DB_PASSWORD")
+		if password == "" {
+			fmt.Println("DB_PASSWORD must be set")
+			os.Exit(1)
+		}
+		db = sql.NewSQL(username, password, "127.0.0.1", "3306")
+	default:
+		db = local.NewLocalFileSystem(workDir)
+	}
+
+	return db
 }
