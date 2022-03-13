@@ -162,7 +162,28 @@ var _ = Describe("Sql", func() {
 
 			list, err := s.ListActiveNotes(reader)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(list)).To(Equal(1))
+			Expect(list[0]).To(Equal(existingNote))
+		})
+	})
+
+	Context("List archived notes", func() {
+		It("lists archived notes", func() {
+			s := sql.NewSQL("username", "password", "127.0.0.1", "3306")
+			db, mock, err := sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			s.Db = db
+			defer db.Close()
+			existingNote := models.Note{Id: id, Name: name, Content: content, Archived: true, User: models.User{Username: username}}
+
+			reader := io.NopCloser(strings.NewReader(""))
+
+			rows := sqlmock.NewRows([]string{"id", "name", "content", "archived", "username"}).
+				AddRow(existingNote.Id, existingNote.Name, existingNote.Content, existingNote.Archived, existingNote.User.Username)
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM notes WHERE archived=1")).WillReturnRows(rows)
+
+			list, err := s.ListArchivedNotes(reader)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(list[0]).To(Equal(existingNote))
 		})
 	})
 })

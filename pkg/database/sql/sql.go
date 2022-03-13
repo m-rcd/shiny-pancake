@@ -103,14 +103,14 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 	note.Id = id
 
 	if note.Archived {
-		if err := Archive(s, note); err != nil {
+		if err := archive(s, note); err != nil {
 			return models.Note{}, err
 		}
 		return note, nil
 	}
 
 	if !note.Archived && existingNote.Archived {
-		if err := Unarchive(s, note); err != nil {
+		if err := unarchive(s, note); err != nil {
 			return models.Note{}, err
 		}
 		return note, nil
@@ -139,6 +139,48 @@ func (s *SQL) ListActiveNotes(body io.ReadCloser) ([]models.Note, error) {
 	}
 	defer result.Close()
 
+	notes, err := listNotes(result)
+	if err != nil {
+		return []models.Note{}, err
+	}
+
+	return notes, nil
+}
+
+func (s *SQL) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {
+	result, err := s.Db.Query("SELECT * FROM notes WHERE archived=1")
+	if err != nil {
+		return []models.Note{}, err
+	}
+	defer result.Close()
+
+	notes, err := listNotes(result)
+	if err != nil {
+		return []models.Note{}, err
+	}
+
+	return notes, nil
+}
+
+func archive(s *SQL, note models.Note) error {
+	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 1, note.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func unarchive(s *SQL, note models.Note) error {
+	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 0, note.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func listNotes(result *sql.Rows) ([]models.Note, error) {
 	var notes []models.Note
 	var note models.Note
 
@@ -150,26 +192,4 @@ func (s *SQL) ListActiveNotes(body io.ReadCloser) ([]models.Note, error) {
 		notes = append(notes, note)
 	}
 	return notes, nil
-}
-
-func (s *SQL) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {
-	return []models.Note{}, nil
-}
-
-func Archive(s *SQL, note models.Note) error {
-	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 1, note.Id)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func Unarchive(s *SQL, note models.Note) error {
-	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 0, note.Id)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

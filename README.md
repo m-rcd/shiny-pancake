@@ -297,8 +297,6 @@ The API have the following key features:
         }
     ]
     ```
-    SQL storage not supported for this action yet.
-
 
 ## Testing
 
@@ -318,8 +316,8 @@ One, it will allow a developer to use the app without having to setup the databa
 ## Todo
 
 - [x] Add Makefile
-- [ ] Test for SQL 
-- [ ] Add SQL support for all request
+- [x] Test for SQL 
+- [x] Add SQL support for all request
 - [ ] Refactor integration test to be table test once SQL is working
 - [ ] Add logging to help debugging in the case of server errors
 - [ ] Add graceful shutdown
