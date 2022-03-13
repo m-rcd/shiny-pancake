@@ -20,7 +20,6 @@ var (
 )
 
 func main() {
-	fmt.Println("HI")
 	fmt.Println("Listening on port 10000")
 	var workDir string
 
