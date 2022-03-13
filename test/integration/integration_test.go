@@ -34,4 +34,33 @@ var _ = Describe("Integration", func() {
 			Expect("/tmp/notes/Pantalaimon/active/note1.txt").To(BeAnExistingFile())
 		})
 	})
+
+	Context("PATCH request", func() {
+		BeforeEach(func() {
+			c := http.Client{}
+			postData := bytes.NewBuffer([]byte(`{"name":"note1","content":"I am a new note!","user":{"username":"Pantalaimon"}}`))
+			resp, err := c.Post("http://localhost:10000/note", "application/json", postData)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+			Expect("/tmp/notes/Pantalaimon/active/note1.txt").To(BeAnExistingFile())
+		})
+		AfterEach(func() {
+			os.RemoveAll("/tmp/notes")
+		})
+
+		It("updates a previously saved note", func() {
+			c := http.Client{}
+			patchData := bytes.NewBuffer([]byte(`{"name":"note1","content":"I am updated!","user":{"username":"Pantalaimon"}}`))
+			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/note1", patchData)
+			Expect(err).NotTo(HaveOccurred())
+			resp, _ := c.Do(req)
+			_, err = ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			defer req.Body.Close()
+
+			dat, err := os.ReadFile("/tmp/notes/Pantalaimon/active/note1.txt")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(dat)).To(Equal("I am updated!"))
+		})
+	})
 })

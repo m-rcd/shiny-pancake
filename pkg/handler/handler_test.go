@@ -65,4 +65,49 @@ var _ = Describe("Handler", func() {
 		})
 	})
 
+	Context("#UpdateNote", func() {
+		It("handles PATCH request", func() {
+			fake_db := new(databasefakes.FakeDatabase)
+
+			data := bytes.NewBuffer([]byte(`{"name":"Vampires","content":"I SLAY A LOT","user":{"username":"Buffy"}}`))
+			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/Vampires", data)
+			Expect(err).NotTo(HaveOccurred())
+			r := httptest.NewRecorder()
+			h := handler.New(fake_db)
+
+			note := models.Note{Name: "Vampires", Content: "I SLAY A LOT", User: models.User{Username: "Buffy"}}
+			fake_db.UpdateReturns(note, nil)
+			h.UpdateNote(r, req)
+			Expect(fake_db.UpdateCallCount()).To(Equal(1))
+			var response responses.JsonNoteResponse
+
+			json.Unmarshal(r.Body.Bytes(), &response)
+			Expect(response.Type).To(Equal("success"))
+			Expect(response.StatusCode).To(Equal(200))
+			Expect(response.Data[0].Content).To(Equal("I SLAY A LOT"))
+			Expect(response.Message).To(Equal("The note was successfully updated"))
+		})
+
+		Context("when an error occurs", func() {
+			It("does not update the note", func() {
+				fake_db := new(databasefakes.FakeDatabase)
+
+				h := handler.New(fake_db)
+				r := httptest.NewRecorder()
+				patchData := bytes.NewBuffer([]byte(`{"name":"","content":"I SLAY","user":{"username":"Buffy"}}`))
+				req, err := http.NewRequest("POST", "http://localhost:10000/note/note1", patchData)
+				Expect(err).NotTo(HaveOccurred())
+
+				fake_db.UpdateReturns(models.Note{}, errors.New("Not updated"))
+				h.UpdateNote(r, req)
+				Expect(fake_db.UpdateCallCount()).To(Equal(1))
+				var response responses.JsonNoteResponse
+
+				json.Unmarshal(r.Body.Bytes(), &response)
+				Expect(response.Type).To(Equal("failed"))
+				Expect(response.StatusCode).To(Equal(500))
+				Expect(response.Message).To(Equal("Not updated"))
+			})
+		})
+	})
 })

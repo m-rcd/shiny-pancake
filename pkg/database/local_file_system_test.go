@@ -81,4 +81,101 @@ var _ = Describe("LocalFileSystem", func() {
 		})
 	})
 
+	Context("UPDATE", func() {
+		BeforeEach(func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
+
+			noteBytes, err := json.Marshal(note)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+			_, err = db.Create(r)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("updates a previously saved note", func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			note := models.Note{Name: "Note1", Content: "BOOOO", User: models.User{Username: "Casper"}}
+
+			noteBytes, err := json.Marshal(note)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+			_, err = db.Update("Note1", r)
+			Expect(err).NotTo(HaveOccurred())
+			dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(dat)).To(Equal("BOOOO"))
+		})
+
+		Context("when an error occurs", func() {
+			Context("when file does not exist", func() {
+				It("does not update the note and raises an error", func() {
+					db = database.NewLocalFileSystem(tempDir)
+					err := db.Open()
+					Expect(err).NotTo(HaveOccurred())
+
+					note := models.Note{Name: "Note2", Content: "BOOOO", User: models.User{Username: "Casper"}}
+
+					noteBytes, err := json.Marshal(note)
+					Expect(err).NotTo(HaveOccurred())
+					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+					_, err = db.Update("Note2", r)
+					Expect(err).To(MatchError("file does not exist"))
+					dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(dat)).To(Equal("Miaaaww"))
+				})
+			})
+
+			Context("when name is not set", func() {
+				It("does not update the note and raises an error", func() {
+					db = database.NewLocalFileSystem(tempDir)
+					err := db.Open()
+					Expect(err).NotTo(HaveOccurred())
+
+					note := models.Note{Name: "", Content: "BOOOO", User: models.User{Username: "Casper"}}
+
+					noteBytes, err := json.Marshal(note)
+					Expect(err).NotTo(HaveOccurred())
+					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+					_, err = db.Update("Note1", r)
+					Expect(err).To(MatchError("name must be set"))
+					dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(dat)).To(Equal("Miaaaww"))
+				})
+			})
+
+			Context("when user is not set", func() {
+				It("does not update the note and raises an error", func() {
+					db = database.NewLocalFileSystem(tempDir)
+					err := db.Open()
+					Expect(err).NotTo(HaveOccurred())
+
+					note := models.Note{Name: "Note1", Content: "BOOOO", User: models.User{Username: ""}}
+
+					noteBytes, err := json.Marshal(note)
+					Expect(err).NotTo(HaveOccurred())
+					r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+					_, err = db.Update("Note1", r)
+					Expect(err).To(MatchError("user must be set"))
+					dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(dat)).To(Equal("Miaaaww"))
+				})
+			})
+		})
+	})
+
 })

@@ -43,6 +43,20 @@ type FakeDatabase struct {
 	openReturnsOnCall map[int]struct {
 		result1 error
 	}
+	UpdateStub        func(string, io.ReadCloser) (models.Note, error)
+	updateMutex       sync.RWMutex
+	updateArgsForCall []struct {
+		arg1 string
+		arg2 io.ReadCloser
+	}
+	updateReturns struct {
+		result1 models.Note
+		result2 error
+	}
+	updateReturnsOnCall map[int]struct {
+		result1 models.Note
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -217,6 +231,71 @@ func (fake *FakeDatabase) OpenReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeDatabase) Update(arg1 string, arg2 io.ReadCloser) (models.Note, error) {
+	fake.updateMutex.Lock()
+	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
+	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
+		arg1 string
+		arg2 io.ReadCloser
+	}{arg1, arg2})
+	stub := fake.UpdateStub
+	fakeReturns := fake.updateReturns
+	fake.recordInvocation("Update", []interface{}{arg1, arg2})
+	fake.updateMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeDatabase) UpdateCallCount() int {
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
+	return len(fake.updateArgsForCall)
+}
+
+func (fake *FakeDatabase) UpdateCalls(stub func(string, io.ReadCloser) (models.Note, error)) {
+	fake.updateMutex.Lock()
+	defer fake.updateMutex.Unlock()
+	fake.UpdateStub = stub
+}
+
+func (fake *FakeDatabase) UpdateArgsForCall(i int) (string, io.ReadCloser) {
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
+	argsForCall := fake.updateArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeDatabase) UpdateReturns(result1 models.Note, result2 error) {
+	fake.updateMutex.Lock()
+	defer fake.updateMutex.Unlock()
+	fake.UpdateStub = nil
+	fake.updateReturns = struct {
+		result1 models.Note
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeDatabase) UpdateReturnsOnCall(i int, result1 models.Note, result2 error) {
+	fake.updateMutex.Lock()
+	defer fake.updateMutex.Unlock()
+	fake.UpdateStub = nil
+	if fake.updateReturnsOnCall == nil {
+		fake.updateReturnsOnCall = make(map[int]struct {
+			result1 models.Note
+			result2 error
+		})
+	}
+	fake.updateReturnsOnCall[i] = struct {
+		result1 models.Note
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeDatabase) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -226,6 +305,8 @@ func (fake *FakeDatabase) Invocations() map[string][][]interface{} {
 	defer fake.createMutex.RUnlock()
 	fake.openMutex.RLock()
 	defer fake.openMutex.RUnlock()
+	fake.updateMutex.RLock()
+	defer fake.updateMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

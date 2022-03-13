@@ -13,4 +13,5 @@ type Database interface {
 	Open() error
 	Close() error
 	Create(body io.ReadCloser) (models.Note, error)
+	Update(name string, body io.ReadCloser) (models.Note, error)
 }
