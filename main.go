@@ -27,10 +27,9 @@ func main() {
 	fmt.Println("Listening on port 10000")
 
 	var storage string
-	flag.StringVar(&storage, "db", "local", "store notes on the local filesystem or in an SQL database (default: local)")
-	flag.Parse()
-
 	var workDir string
+	flag.StringVar(&storage, "db", "local", "store notes on the local filesystem or in an SQL database (default: local)")
+
 	flag.StringVar(&workDir, "directory", "/tmp", "notes location when `--db` set to `local` (default: /tmp)")
 	flag.Parse()
 

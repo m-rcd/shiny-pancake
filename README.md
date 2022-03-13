@@ -22,46 +22,46 @@ The API have the following key features:
 
 ## Technologies
 
-- [Golang](https://go.dev/)
-- [Gorilla mux](https://pkg.go.dev/github.com/gorilla/mux#section-readme) to handle requests.
-- [net/http](https://pkg.go.dev/net/http) to handle HTTP client and server.
+- [Golang](https://go.dev/). Even though I have more experience with Ruby, I decided to implement the task in Golang instead because I thought it would be more challenging and a good opportunity to learn.
+- [Gorilla mux](https://pkg.go.dev/github.com/gorilla/mux#section-readme) to handle requests. I chose this one because it is widely used and well supported.
 - [ginkgo](https://github.com/onsi/ginkgo) for testing. I have opted for this one rather then the inbuilt go test because it allows for more descriptive tests. 
-- [go-sql-mysql](https://github.com/go-sql-driver/mysql)
+- [go-sql-mysql](https://github.com/go-sql-driver/mysql) I chose this one because it is well maintained and supporrted.
+- [counterfeiter](github.com/maxbrunsfeld/counterfeiter/) to generate a fake database interface for unit tests.
 
 
 ## Usage
 
 1. Clone the repo
-    ```
+    ```shell
     git clone git@github.com:m-rcd/notes.git
     cd notes
     ```
 
 1. Build the app
 
-    ```
+    ```shell
     go build
     ```
 
 1. Start the server
 
-    ```
+    ```shell
     ./notes
     ```
     The server will listen on port `10000`. 
 
     The server can take flags:
-    - `--storage` which can be `local` or `sql`. If not specified, the notes would be stored locally by default. 
+    - `--db` which can be `local` or `sql`. If not specified, the notes would be stored locally by default. 
     -  `--directory` to allow user to save notes in a specified location. If not specified, the notes would be saved in the default location `/tmp`. This flag is only used in the case of local storage.
 
     To save in a different directory: 
     ```shell
-    ./notes --directory <dir name>
+    ./notes --db local --directory <dir name>
     ```
 
     To use `sql` as database: 
     ```shell
-    DB_USERNAME=<username> DB_PASSWORD=<password> ./notes --storage sql
+    DB_USERNAME=<username> DB_PASSWORD=<password> ./notes --db sql
     ```
 
     To use `sql` a database `notes` needs to be created before the server has started. The table `notes` will be created as part of the app.
@@ -148,7 +148,7 @@ The API have the following key features:
 
 1. Delete a saved note
 
-    ```
+    ```shell
     curl -X DELETE -H "Content-Type: application/json" -d '{"username":"Sabriel"}' http://localhost:10000/note/4ac82864-0354-43af-5582-fc721dfc4cf4
     ```
 
@@ -169,7 +169,7 @@ The API have the following key features:
     To archive a note, a PATCH request is used to move the note from `/tmp/notes/Sabriel/active/` to `/tmp/notes/Sabriel/archived/`. 
     Note that any other attribute sent in the body of the request will be ignored if `archived` is set to `true`.
 
-    ```
+    ```shell
     curl -X PATCH -H "Content-Type: application/json" -d '{"archived":true,"user":{"username":"Sabriel"}}' http://localhost:10000/note/4ac82864-0354-43af-5582-fc721dfc4cf4
     ```
 
@@ -195,7 +195,7 @@ The API have the following key features:
 
     Note that any other attribute sent in the body of the request will be ignored if `archived` is set to `false` and the note was archived.
 
-    ```
+    ```shell
     curl -X PATCH -H "Content-Type: application/json" -d '{"archived":false,"user":{"username":"Sabriel"}}' http://localhost:10000/note/4ac82864-0354-43af-5582-fc721dfc4cf4
     ```
     The PATCH request will return a JSON response: 
@@ -220,7 +220,7 @@ The API have the following key features:
 
 1. List saved notes that aren't archived
 
-    ```
+    ```shell
     curl -X GET -H "Content-Type: application/json" -d '{"username":"Sabriel"}' http://localhost:10000/notes/active
     ```
 
@@ -253,7 +253,7 @@ The API have the following key features:
 
 1. List saved notes that are archived
 
-    ```
+    ```shell
     curl -X GET -H "Content-Type: application/json" -d '{"username":"Sabriel"}' http://localhost:10000/notes/archived
     ```
 
@@ -288,8 +288,8 @@ The API have the following key features:
 
 To run all tests: 
 
-```
-ginkgo -r 
+```shell
+ginkgo -r -v
 ```
 
 ## Approach
