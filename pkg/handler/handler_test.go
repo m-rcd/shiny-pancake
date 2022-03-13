@@ -70,12 +70,12 @@ var _ = Describe("Handler", func() {
 			fake_db := new(databasefakes.FakeDatabase)
 
 			data := bytes.NewBuffer([]byte(`{"name":"Vampires","content":"I SLAY A LOT","user":{"username":"Buffy"}}`))
-			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/Vampires", data)
+			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/1", data)
 			Expect(err).NotTo(HaveOccurred())
 			r := httptest.NewRecorder()
 			h := handler.New(fake_db)
 
-			note := models.Note{Name: "Vampires", Content: "I SLAY A LOT", User: models.User{Username: "Buffy"}}
+			note := models.Note{Id: "1", Name: "Vampires", Content: "I SLAY A LOT", User: models.User{Username: "Buffy"}}
 			fake_db.UpdateReturns(note, nil)
 			h.UpdateNote(r, req)
 			Expect(fake_db.UpdateCallCount()).To(Equal(1))
@@ -95,7 +95,7 @@ var _ = Describe("Handler", func() {
 				h := handler.New(fake_db)
 				r := httptest.NewRecorder()
 				patchData := bytes.NewBuffer([]byte(`{"name":"","content":"I SLAY","user":{"username":"Buffy"}}`))
-				req, err := http.NewRequest("POST", "http://localhost:10000/note/note1", patchData)
+				req, err := http.NewRequest("POST", "http://localhost:10000/note/1", patchData)
 				Expect(err).NotTo(HaveOccurred())
 
 				fake_db.UpdateReturns(models.Note{}, errors.New("Not updated"))
@@ -116,7 +116,7 @@ var _ = Describe("Handler", func() {
 			fake_db := new(databasefakes.FakeDatabase)
 
 			data := bytes.NewBuffer([]byte(`{"username":"Buffy"}`))
-			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/Vampires", data)
+			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/1", data)
 			Expect(err).NotTo(HaveOccurred())
 			r := httptest.NewRecorder()
 			h := handler.New(fake_db)
@@ -140,7 +140,7 @@ var _ = Describe("Handler", func() {
 				h := handler.New(fake_db)
 				r := httptest.NewRecorder()
 				data := bytes.NewBuffer([]byte(`{"username":"Buffy"}`))
-				req, err := http.NewRequest("POST", "http://localhost:10000/note/Vampires", data)
+				req, err := http.NewRequest("POST", "http://localhost:10000/note/1", data)
 				Expect(err).NotTo(HaveOccurred())
 
 				fake_db.DeleteReturns(errors.New("Not deleted"))

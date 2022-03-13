@@ -7,8 +7,10 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/m-rcd/notes/pkg/models"
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 type LocalFileSystem struct {
@@ -37,7 +39,7 @@ func (l *LocalFileSystem) Create(body io.ReadCloser) (models.Note, error) {
 	var note models.Note
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &note)
-
+	note.Id = newId()
 	err := validateNote(note)
 	if err != nil {
 		return models.Note{}, err
@@ -48,49 +50,51 @@ func (l *LocalFileSystem) Create(body io.ReadCloser) (models.Note, error) {
 	if err != nil {
 		return models.Note{}, err
 	}
-
-	path := fmt.Sprintf("%s%s.txt", folder, note.Name)
-	err = ioutil.WriteFile(path, []byte(note.Content), 0777)
+	fileName := fmt.Sprintf("%s_%s.txt", note.Name, note.Id)
+	filePath := fmt.Sprintf("%s%s", folder, fileName)
+	err = ioutil.WriteFile(filePath, []byte(note.Content), 0777)
 	if err != nil {
 		fmt.Printf("Unable to write file: %v", err)
 	}
 	return note, nil
 }
 
-func (l *LocalFileSystem) Update(name string, body io.ReadCloser) (models.Note, error) {
+func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, error) {
 	var note models.Note
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &note)
+	note.Id = id
 
 	err := validateNote(note)
 	if err != nil {
 		return models.Note{}, err
 	}
+	fileName := fmt.Sprintf("%s_%s.txt", note.Name, note.Id)
 
-	path := fmt.Sprintf("%s/%s/active/%s.txt", l.workDir, note.User.Username, note.Name)
-	err = validateFileExists(path)
+	filePath := fmt.Sprintf("%s/%s/active/%s", l.workDir, note.User.Username, fileName)
+	err = validateFileExists(filePath)
+
 	if err != nil {
 		return models.Note{}, err
 	}
 
-	err = ioutil.WriteFile(path, []byte(note.Content), 0777)
+	err = ioutil.WriteFile(filePath, []byte(note.Content), 0777)
 	if err != nil {
 		fmt.Printf("Unable to write file: %v", err)
 	}
 	return note, nil
 }
 
-func (l *LocalFileSystem) Delete(name string, body io.ReadCloser) error {
+func (l *LocalFileSystem) Delete(id string, body io.ReadCloser) error {
 	var user models.User
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &user)
-	path := fmt.Sprintf("%s/%s/active/%s.txt", l.workDir, user.Username, name)
-	err := validateFileExists(path)
+	filePath, err := findFile(fmt.Sprintf("%s/%s/active/", l.workDir, user.Username), id)
 	if err != nil {
 		return err
 	}
 
-	err = os.RemoveAll(path)
+	err = os.RemoveAll(filePath)
 	if err != nil {
 		return err
 	}
@@ -117,4 +121,30 @@ func validateFileExists(path string) error {
 
 func isSet(attr string) bool {
 	return attr != ""
+}
+
+func newId() string {
+	id, _ := uuid.NewV4()
+	return id.String()
+}
+
+func findFile(dir string, id string) (string, error) {
+	var f string
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+	for _, file := range files {
+		name := strings.Split(strings.Split(file.Name(), "_")[1], ".")[0]
+		if name == id {
+			f = dir + file.Name()
+		}
+	}
+
+	if f == "" {
+		return "", errors.New("file does not exist")
+	}
+
+	return f, nil
 }

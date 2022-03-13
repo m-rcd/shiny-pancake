@@ -36,9 +36,9 @@ func (h *Handler) CreateNewNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+	id := mux.Vars(r)["id"]
 
-	note, err := h.db.Update(name, r.Body)
+	note, err := h.db.Update(id, r.Body)
 	if err != nil {
 		response = noteResponse.Failure(err.Error())
 	} else {
@@ -49,9 +49,9 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+	id := mux.Vars(r)["id"]
 
-	err := h.db.Delete(name, r.Body)
+	err := h.db.Delete(id, r.Body)
 	if err != nil {
 		response = noteResponse.Failure(err.Error())
 	} else {

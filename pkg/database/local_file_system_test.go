@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -39,9 +40,10 @@ var _ = Describe("LocalFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 			r := io.NopCloser(strings.NewReader(string(noteBytes)))
 
-			_, err = db.Create(r)
+			newNote, err := db.Create(r)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(tempDir + "/notes/Casper/active/note1.txt").To(BeAnExistingFile())
+			filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, newNote.User.Username, newNote.Name, newNote.Id)
+			Expect(filepath).To(BeAnExistingFile())
 		})
 
 		Context("when error occurs", func() {
@@ -82,6 +84,7 @@ var _ = Describe("LocalFileSystem", func() {
 	})
 
 	Context("UPDATE", func() {
+		var existingNote models.Note
 		BeforeEach(func() {
 			db = database.NewLocalFileSystem(tempDir)
 			err := db.Open()
@@ -93,7 +96,7 @@ var _ = Describe("LocalFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 			r := io.NopCloser(strings.NewReader(string(noteBytes)))
 
-			_, err = db.Create(r)
+			existingNote, err = db.Create(r)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -108,11 +111,12 @@ var _ = Describe("LocalFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 			r := io.NopCloser(strings.NewReader(string(noteBytes)))
 
-			_, err = db.Update("Note1", r)
+			_, err = db.Update(existingNote.Id, r)
 			Expect(err).NotTo(HaveOccurred())
-			dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+			filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+			content, err := os.ReadFile(filepath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(dat)).To(Equal("BOOOO"))
+			Expect(string(content)).To(Equal("BOOOO"))
 		})
 
 		Context("when an error occurs", func() {
@@ -128,11 +132,12 @@ var _ = Describe("LocalFileSystem", func() {
 					Expect(err).NotTo(HaveOccurred())
 					r := io.NopCloser(strings.NewReader(string(noteBytes)))
 
-					_, err = db.Update("Note2", r)
+					_, err = db.Update(existingNote.Id, r)
 					Expect(err).To(MatchError("file does not exist"))
-					dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+					filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+					content, err := os.ReadFile(filepath)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(string(dat)).To(Equal("Miaaaww"))
+					Expect(string(content)).To(Equal("Miaaaww"))
 				})
 			})
 
@@ -148,11 +153,12 @@ var _ = Describe("LocalFileSystem", func() {
 					Expect(err).NotTo(HaveOccurred())
 					r := io.NopCloser(strings.NewReader(string(noteBytes)))
 
-					_, err = db.Update("Note1", r)
+					_, err = db.Update(existingNote.Id, r)
 					Expect(err).To(MatchError("name must be set"))
-					dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+					filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+					content, err := os.ReadFile(filepath)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(string(dat)).To(Equal("Miaaaww"))
+					Expect(string(content)).To(Equal("Miaaaww"))
 				})
 			})
 
@@ -168,17 +174,19 @@ var _ = Describe("LocalFileSystem", func() {
 					Expect(err).NotTo(HaveOccurred())
 					r := io.NopCloser(strings.NewReader(string(noteBytes)))
 
-					_, err = db.Update("Note1", r)
+					_, err = db.Update(existingNote.Id, r)
 					Expect(err).To(MatchError("user must be set"))
-					dat, err := os.ReadFile(tempDir + "/notes/Casper/active/note1.txt")
+					filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+					content, err := os.ReadFile(filepath)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(string(dat)).To(Equal("Miaaaww"))
+					Expect(string(content)).To(Equal("Miaaaww"))
 				})
 			})
 		})
 	})
 
 	Context("Delete", func() {
+		var existingNote models.Note
 		BeforeEach(func() {
 			db = database.NewLocalFileSystem(tempDir)
 			err := db.Open()
@@ -190,7 +198,7 @@ var _ = Describe("LocalFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 			r := io.NopCloser(strings.NewReader(string(noteBytes)))
 
-			_, err = db.Create(r)
+			existingNote, err = db.Create(r)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -205,9 +213,11 @@ var _ = Describe("LocalFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 			r := io.NopCloser(strings.NewReader(string(userBytes)))
 
-			err = db.Delete("Note1", r)
+			err = db.Delete(existingNote.Id, r)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(tempDir + "/notes/Casper/active/note1.txt").NotTo(BeAnExistingFile())
+			filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+
+			Expect(filepath).NotTo(BeAnExistingFile())
 		})
 
 		Context("when errors occur", func() {
@@ -222,9 +232,11 @@ var _ = Describe("LocalFileSystem", func() {
 				Expect(err).NotTo(HaveOccurred())
 				r := io.NopCloser(strings.NewReader(string(userBytes)))
 
-				err = db.Delete("Note2", r)
+				err = db.Delete("123", r)
 				Expect(err).To(MatchError("file does not exist"))
-				Expect(tempDir + "/notes/Casper/active/note1.txt").To(BeAnExistingFile())
+				filepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+
+				Expect(filepath).To(BeAnExistingFile())
 			})
 		})
 	})

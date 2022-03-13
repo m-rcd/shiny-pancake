@@ -47,8 +47,8 @@ func handleRequests(db database.Database) {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/", h.HomePage)
 	myRouter.HandleFunc("/note", h.CreateNewNote).Methods("POST")
-	myRouter.HandleFunc("/note/{name}", h.UpdateNote).Methods("PATCH")
-	myRouter.HandleFunc("/note/{name}", h.DeleteNote).Methods("DELETE")
+	myRouter.HandleFunc("/note/{id}", h.UpdateNote).Methods("PATCH")
+	myRouter.HandleFunc("/note/{id}", h.DeleteNote).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
