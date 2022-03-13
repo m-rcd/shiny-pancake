@@ -74,6 +74,7 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 		return archivedNote, nil
 	}
 	dir := fmt.Sprintf("%s/%s/", l.workDir, note.User.Username)
+
 	if Archived(dir, id) {
 		activeNote, err := Unarchive(l.workDir, note)
 		if err != nil {
@@ -154,71 +155,56 @@ func (l *LocalFileSystem) ListActiveNotes(body io.ReadCloser) ([]models.Note, er
 }
 
 func Archive(dir string, note models.Note) (models.Note, error) {
-	fileName, err := findFile(fmt.Sprintf("%s/%s/active/", dir, note.User.Username), note.Id)
-	if err != nil {
-		return models.Note{}, err
-	}
-	oldPath := fmt.Sprintf("%s/%s/active/%s", dir, note.User.Username, fileName)
-	existingName := strings.Split(fileName, "_")[0]
-	if !isSet(note.Name) || note.Name != existingName {
-		note.Name = existingName
-	}
-	oldContent, err := os.ReadFile(oldPath)
+	oldPath := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
+	newPath := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)
+
+	archivedNote, err := moveNote(note, oldPath, newPath)
 	if err != nil {
 		return models.Note{}, err
 	}
 
-	if !isSet(note.Content) || (note.Content != string(oldContent)) {
-		note.Content = string(oldContent)
-	}
-
-	archivedFolder := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)
-	err = os.MkdirAll(archivedFolder, 0777)
-	if err != nil {
-		return models.Note{}, err
-	}
-
-	archivedFilePath := fmt.Sprintf("%s%s", archivedFolder, fileName)
-	err = os.Rename(oldPath, archivedFilePath)
-	if err != nil {
-		return models.Note{}, err
-	}
-
-	return note, nil
+	return archivedNote, nil
 }
 
 func Unarchive(dir string, note models.Note) (models.Note, error) {
-	fileName, err := findFile(fmt.Sprintf("%s/%s/archived/", dir, note.User.Username), note.Id)
-	if err != nil {
-		return models.Note{}, err
-	}
-	oldPath := fmt.Sprintf("%s/%s/archived/%s", dir, note.User.Username, fileName)
-	existingName := strings.Split(fileName, "_")[0]
-	if !isSet(note.Name) || note.Name != existingName {
-		note.Name = existingName
-	}
-	oldContent, err := os.ReadFile(oldPath)
+	oldPath := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)
+	newPath := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
+
+	activeNote, err := moveNote(note, oldPath, newPath)
 	if err != nil {
 		return models.Note{}, err
 	}
 
-	if !isSet(note.Content) || (note.Content != string(oldContent)) {
-		note.Content = string(oldContent)
-	}
+	return activeNote, nil
+}
 
-	activeFolder := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
-	err = os.MkdirAll(activeFolder, 0777)
+func moveNote(note models.Note, from, to string) (models.Note, error) {
+	fileName, err := findFile(from, note.Id)
+	if err != nil {
+		return models.Note{}, err
+	}
+	fromFile := fmt.Sprintf("%s%s", from, fileName)
+	toFile := fmt.Sprintf("%s%s", to, fileName)
+
+	err = os.MkdirAll(to, 0777)
 	if err != nil {
 		return models.Note{}, err
 	}
 
-	activeFilePath := fmt.Sprintf("%s%s", activeFolder, fileName)
-	err = os.Rename(oldPath, activeFilePath)
+	err = os.Rename(fromFile, toFile)
 	if err != nil {
 		return models.Note{}, err
 	}
 
-	return note, nil
+	note.Name = strings.Split(fileName, "_")[0]
+	oldContent, err := os.ReadFile(toFile)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	note.Content = string(oldContent)
+
+	return note, err
 }
 
 func validateNote(note models.Note) error {
