@@ -154,6 +154,40 @@ func (l *LocalFileSystem) ListActiveNotes(body io.ReadCloser) ([]models.Note, er
 	return notes, nil
 }
 
+func (l *LocalFileSystem) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {
+	var user models.User
+	reqBody, _ := ioutil.ReadAll(body)
+	json.Unmarshal(reqBody, &user)
+	notes := []models.Note{}
+	dir := fmt.Sprintf("%s/%s/archived/", l.workDir, user.Username)
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return []models.Note{}, err
+	}
+	for _, file := range files {
+		path := fmt.Sprintf("%s/%s", dir, file.Name())
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return []models.Note{}, err
+		}
+
+		note := models.Note{
+			User:     user,
+			Id:       strings.Split(strings.Split(file.Name(), "_")[1], ".")[0],
+			Name:     strings.Split(file.Name(), "_")[0],
+			Content:  string(content),
+			Archived: true,
+		}
+		err = validateNote(note)
+		if err != nil {
+			return []models.Note{}, err
+		}
+
+		notes = append(notes, note)
+	}
+	return notes, nil
+}
+
 func Archive(dir string, note models.Note) (models.Note, error) {
 	oldPath := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
 	newPath := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)

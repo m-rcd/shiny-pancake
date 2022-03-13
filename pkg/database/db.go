@@ -16,4 +16,5 @@ type Database interface {
 	Update(id string, body io.ReadCloser) (models.Note, error)
 	Delete(id string, body io.ReadCloser) error
 	ListActiveNotes(body io.ReadCloser) ([]models.Note, error)
+	ListArchivedNotes(body io.ReadCloser) ([]models.Note, error)
 }

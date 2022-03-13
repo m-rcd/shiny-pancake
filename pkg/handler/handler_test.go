@@ -179,4 +179,28 @@ var _ = Describe("Handler", func() {
 			Expect(list[1]).To(Equal(note2))
 		})
 	})
+
+	Context("#ListArchivedNotes", func() {
+		It("handles GET request", func() {
+			fake_db := new(databasefakes.FakeDatabase)
+
+			data := bytes.NewBuffer([]byte(`{"username":"Buffy"}`))
+			req, err := http.NewRequest("GET", "http://localhost:10000/notes/archived", data)
+			Expect(err).NotTo(HaveOccurred())
+			r := httptest.NewRecorder()
+			h := handler.New(fake_db)
+
+			note1 := models.Note{Id: "1", Name: "Vampires", Content: "I SLAY A LOT", Archived: true, User: models.User{Username: "Buffy"}}
+			note2 := models.Note{Id: "2", Name: "Monsters", Content: "I EAT THEM", Archived: true, User: models.User{Username: "Buffy"}}
+
+			fake_db.ListArchivedNotesReturns([]models.Note{note1, note2}, nil)
+			h.ListArchivedNotes(r, req)
+			Expect(fake_db.ListArchivedNotesCallCount()).To(Equal(1))
+			var list []models.Note
+			json.Unmarshal(r.Body.Bytes(), &list)
+			Expect(len(list)).To(Equal(2))
+			Expect(list[0]).To(Equal(note1))
+			Expect(list[1]).To(Equal(note2))
+		})
+	})
 })

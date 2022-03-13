@@ -69,7 +69,16 @@ func (h *Handler) ListActiveNotes(w http.ResponseWriter, r *http.Request) {
 	} else {
 		json.NewEncoder(w).Encode(notes)
 	}
+}
 
+func (h *Handler) ListArchivedNotes(w http.ResponseWriter, r *http.Request) {
+	notes, err := h.db.ListArchivedNotes(r.Body)
+	if err != nil {
+		response = noteResponse.Failure(err.Error())
+		json.NewEncoder(w).Encode(response)
+	} else {
+		json.NewEncoder(w).Encode(notes)
+	}
 }
 
 func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {

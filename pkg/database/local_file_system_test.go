@@ -405,4 +405,71 @@ var _ = Describe("LocalFileSystem", func() {
 		})
 	})
 
+	Context("LISTARCHIVEDNOTES", func() {
+		var note1 models.Note
+		var note2 models.Note
+		var archivedNote1 models.Note
+		var archivedNote2 models.Note
+
+		BeforeEach(func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			noteData1 := models.Note{Name: "Note1", Content: "Kirjava", User: models.User{Username: "Lyra"}}
+
+			noteBytes1, err := json.Marshal(noteData1)
+			Expect(err).NotTo(HaveOccurred())
+			r1 := io.NopCloser(strings.NewReader(string(noteBytes1)))
+
+			note1, err = db.Create(r1)
+			Expect(err).NotTo(HaveOccurred())
+
+			noteData2 := models.Note{Name: "Note2", Content: "Pantalaimon", User: models.User{Username: "Lyra"}}
+
+			noteBytes2, err := json.Marshal(noteData2)
+			Expect(err).NotTo(HaveOccurred())
+			r2 := io.NopCloser(strings.NewReader(string(noteBytes2)))
+
+			note2, err = db.Create(r2)
+			Expect(err).NotTo(HaveOccurred())
+
+			updatedNote1 := models.Note{Archived: true, User: models.User{Username: "Lyra"}}
+
+			updatedNote1Bytes, err := json.Marshal(updatedNote1)
+			Expect(err).NotTo(HaveOccurred())
+			rr1 := io.NopCloser(strings.NewReader(string(updatedNote1Bytes)))
+
+			archivedNote1, err = db.Update(note1.Id, rr1)
+			Expect(err).NotTo(HaveOccurred())
+
+			updatedNote2 := models.Note{Archived: true, User: models.User{Username: "Lyra"}}
+
+			updatedNote2Bytes, err := json.Marshal(updatedNote2)
+			Expect(err).NotTo(HaveOccurred())
+			rr2 := io.NopCloser(strings.NewReader(string(updatedNote2Bytes)))
+
+			archivedNote2, err = db.Update(note2.Id, rr2)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns a list of archived notes", func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			user := models.User{Username: "Lyra"}
+
+			userBytes, err := json.Marshal(user)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(userBytes)))
+
+			notes, err := db.ListArchivedNotes(r)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(notes)).To(Equal(2))
+			Expect(notes[0]).To(Equal(archivedNote1))
+			Expect(notes[1]).To(Equal(archivedNote2))
+		})
+	})
+
 })

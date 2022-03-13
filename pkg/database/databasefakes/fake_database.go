@@ -58,6 +58,19 @@ type FakeDatabase struct {
 		result1 []models.Note
 		result2 error
 	}
+	ListArchivedNotesStub        func(io.ReadCloser) ([]models.Note, error)
+	listArchivedNotesMutex       sync.RWMutex
+	listArchivedNotesArgsForCall []struct {
+		arg1 io.ReadCloser
+	}
+	listArchivedNotesReturns struct {
+		result1 []models.Note
+		result2 error
+	}
+	listArchivedNotesReturnsOnCall map[int]struct {
+		result1 []models.Note
+		result2 error
+	}
 	OpenStub        func() error
 	openMutex       sync.RWMutex
 	openArgsForCall []struct {
@@ -329,6 +342,70 @@ func (fake *FakeDatabase) ListActiveNotesReturnsOnCall(i int, result1 []models.N
 	}{result1, result2}
 }
 
+func (fake *FakeDatabase) ListArchivedNotes(arg1 io.ReadCloser) ([]models.Note, error) {
+	fake.listArchivedNotesMutex.Lock()
+	ret, specificReturn := fake.listArchivedNotesReturnsOnCall[len(fake.listArchivedNotesArgsForCall)]
+	fake.listArchivedNotesArgsForCall = append(fake.listArchivedNotesArgsForCall, struct {
+		arg1 io.ReadCloser
+	}{arg1})
+	stub := fake.ListArchivedNotesStub
+	fakeReturns := fake.listArchivedNotesReturns
+	fake.recordInvocation("ListArchivedNotes", []interface{}{arg1})
+	fake.listArchivedNotesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeDatabase) ListArchivedNotesCallCount() int {
+	fake.listArchivedNotesMutex.RLock()
+	defer fake.listArchivedNotesMutex.RUnlock()
+	return len(fake.listArchivedNotesArgsForCall)
+}
+
+func (fake *FakeDatabase) ListArchivedNotesCalls(stub func(io.ReadCloser) ([]models.Note, error)) {
+	fake.listArchivedNotesMutex.Lock()
+	defer fake.listArchivedNotesMutex.Unlock()
+	fake.ListArchivedNotesStub = stub
+}
+
+func (fake *FakeDatabase) ListArchivedNotesArgsForCall(i int) io.ReadCloser {
+	fake.listArchivedNotesMutex.RLock()
+	defer fake.listArchivedNotesMutex.RUnlock()
+	argsForCall := fake.listArchivedNotesArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeDatabase) ListArchivedNotesReturns(result1 []models.Note, result2 error) {
+	fake.listArchivedNotesMutex.Lock()
+	defer fake.listArchivedNotesMutex.Unlock()
+	fake.ListArchivedNotesStub = nil
+	fake.listArchivedNotesReturns = struct {
+		result1 []models.Note
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeDatabase) ListArchivedNotesReturnsOnCall(i int, result1 []models.Note, result2 error) {
+	fake.listArchivedNotesMutex.Lock()
+	defer fake.listArchivedNotesMutex.Unlock()
+	fake.ListArchivedNotesStub = nil
+	if fake.listArchivedNotesReturnsOnCall == nil {
+		fake.listArchivedNotesReturnsOnCall = make(map[int]struct {
+			result1 []models.Note
+			result2 error
+		})
+	}
+	fake.listArchivedNotesReturnsOnCall[i] = struct {
+		result1 []models.Note
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeDatabase) Open() error {
 	fake.openMutex.Lock()
 	ret, specificReturn := fake.openReturnsOnCall[len(fake.openArgsForCall)]
@@ -458,6 +535,8 @@ func (fake *FakeDatabase) Invocations() map[string][][]interface{} {
 	defer fake.deleteMutex.RUnlock()
 	fake.listActiveNotesMutex.RLock()
 	defer fake.listActiveNotesMutex.RUnlock()
+	fake.listArchivedNotesMutex.RLock()
+	defer fake.listArchivedNotesMutex.RUnlock()
 	fake.openMutex.RLock()
 	defer fake.openMutex.RUnlock()
 	fake.updateMutex.RLock()
