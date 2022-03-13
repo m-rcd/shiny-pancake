@@ -107,6 +107,10 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 }
 
 func (s *SQL) Delete(id string, body io.ReadCloser) error {
+	_, err := s.Db.Exec("DELETE FROM notes WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -146,9 +146,11 @@ The API have the following key features:
     ```
 
     **Local Storage System**
+
     The content of `/tmp/notes/Sabriel/active/note1_4ac82864-0354-43af-5582-fc721dfc4cf4.txt` will be updated to "I am updated!".
 
     **SQL**
+
     The record will be updated in the database with the new data sent in the request.
 
 1. Delete a saved note
@@ -166,8 +168,13 @@ The API have the following key features:
         "message":"The note was successfully deleted"
     }
     ```
-    SQL storage not supported for action yet.
+    **Local Storage System**
 
+    The file `/tmp/notes/Sabriel/active/note1_4ac82864-0354-43af-5582-fc721dfc4cf4.txt` will be deleted.
+
+    **SQL**
+    
+    The record will be deleted from database.
 
 1. Archive a note 
 

@@ -63,4 +63,22 @@ var _ = Describe("Sql", func() {
 			Expect(updatedNote.Content).To(Equal(requestData.Content))
 		})
 	})
+
+	Context("Delete", func() {
+		It("deletes a note", func() {
+			s := sql.NewSQL("username", "password", "127.0.0.1", "3306")
+			db, mock, err := sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			s.Db = db
+			defer db.Close()
+			existingNote := models.Note{Id: "1", Name: "Note1", Content: "Miawwww", Archived: false, User: models.User{Username: "Casper"}}
+			mock.ExpectExec("DELETE FROM notes WHERE id = ?").WithArgs(existingNote.Id).WillReturnResult(sqlmock.NewResult(1, 1))
+			mock.ExpectCommit()
+
+			reader := io.NopCloser(strings.NewReader(""))
+
+			err = s.Delete(existingNote.Id, reader)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })

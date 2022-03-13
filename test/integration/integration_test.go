@@ -234,6 +234,7 @@ var _ = Describe("When running the note server", func() {
 			session *gexec.Session
 			tempDir string
 			note1   models.Note
+			note2   models.Note
 		)
 
 		BeforeEach(func() {
@@ -297,6 +298,66 @@ var _ = Describe("When running the note server", func() {
 				g.Expect(note1.Content).To(Equal("I am updated!"))
 
 				return nil
+			}, "20s").Should(Succeed())
+
+			By("creating a second note")
+			Eventually(func(g Gomega) error {
+				postData := bytes.NewBuffer([]byte(`{"name":"note2","content":"I am a second note!","user":{"username":"Pantalaimon"}}`))
+				resp, err := c.Post("http://localhost:10000/note", "application/json", postData)
+				g.Expect(err).NotTo(HaveOccurred())
+				defer resp.Body.Close()
+
+				body, err := ioutil.ReadAll(resp.Body)
+				g.Expect(err).NotTo(HaveOccurred())
+				var response responses.JsonNoteResponse
+				json.Unmarshal(body, &response)
+				g.Expect(response.Type).To(Equal("success"))
+				g.Expect(response.StatusCode).To(Equal(200))
+				g.Expect(response.Message).To(Equal("The note was successfully created"))
+				note2 = response.Data[0]
+				g.Expect(note2.Name).To(Equal("note2"))
+
+				return nil
+			}, "20s").Should(Succeed())
+
+			By("deleting the first note")
+			Eventually(func(g Gomega) error {
+				data := bytes.NewBuffer([]byte(`{"username":"Pantalaimon"}`))
+				req, err := http.NewRequest("DELETE", "http://localhost:10000/note/"+note1.Id, data)
+				g.Expect(err).NotTo(HaveOccurred())
+				resp, _ := c.Do(req)
+				body, err := ioutil.ReadAll(resp.Body)
+				g.Expect(err).NotTo(HaveOccurred())
+				defer req.Body.Close()
+
+				var response responses.JsonNoteResponse
+				json.Unmarshal(body, &response)
+				g.Expect(response.Type).To(Equal("success"))
+				g.Expect(response.StatusCode).To(Equal(200))
+				g.Expect(response.Message).To(Equal("The note was successfully deleted"))
+
+				return nil
+
+			}, "20s").Should(Succeed())
+
+			By("deleting the second note")
+			Eventually(func(g Gomega) error {
+				data := bytes.NewBuffer([]byte(`{"username":"Pantalaimon"}`))
+				req, err := http.NewRequest("DELETE", "http://localhost:10000/note/"+note2.Id, data)
+				g.Expect(err).NotTo(HaveOccurred())
+				resp, _ := c.Do(req)
+				body, err := ioutil.ReadAll(resp.Body)
+				g.Expect(err).NotTo(HaveOccurred())
+				defer req.Body.Close()
+
+				var response responses.JsonNoteResponse
+				json.Unmarshal(body, &response)
+				g.Expect(response.Type).To(Equal("success"))
+				g.Expect(response.StatusCode).To(Equal(200))
+				g.Expect(response.Message).To(Equal("The note was successfully deleted"))
+
+				return nil
+
 			}, "20s").Should(Succeed())
 		})
 	})
