@@ -1,10 +1,15 @@
 # Notes
 
+<!-- mdtoc --inplace README.md -->
+<!-- toc -->
 - [Requirements](#requirements)
 - [Technologies](#technologies)
 - [Usage](#usage)
 - [Testing](#testing)
 - [Approach](#approach)
+- [Further Development](#further-development)
+<!-- /toc -->
+
 
 REST API backend application that can be used to manage personal notes.
 
@@ -27,7 +32,7 @@ The API have the following key features:
 - [ginkgo](https://github.com/onsi/ginkgo) for testing. I have opted for this one rather then the inbuilt go test because it allows for more descriptive tests. 
 - [go-sql-mysql](https://github.com/go-sql-driver/mysql) I chose this one because it is well maintained and supporrted.
 - [go-sqlmock](github.com/DATA-DOG/go-sqlmock) to mock sql queries in unit tests.
-- [counterfeiter](github.com/maxbrunsfeld/counterfeiter/) to generate a fake database interface for unit tests.
+- [counterfeiter](github.com/maxbrunsfeld/counterfeiter/) to generate a fake database interface for handler unit tests.
 
 
 ## Usage
@@ -313,7 +318,7 @@ To run these tests, export the `DB_USERNAME` and `DB_PASSWORD` in a `.env` file 
 
 ## Approach
 
-- I have opted to initially complete the API using a local storage instead of a SQL database for two reasons. 
+I opted to initially complete the API using a local storage instead of a SQL database for two reasons. 
 One, it will allow a developer to use the app without having to setup the database before hand. Two, it allowed me to focus on the structure of my code. However, I implemented it using an interface so that once I have the structure completed, I can easily use that interface to plug in a database.
 
 ## Further Development
