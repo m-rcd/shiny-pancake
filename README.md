@@ -303,6 +303,12 @@ One, it will allow a developer to use the app without having to setup the databa
 ## Todo
 
 - [ ] Add Makefile
-- [ ] Test for SQL 
+- [x] Test for SQL 
 - [ ] Add SQL support for all request
 - [ ] Refactor integration test to be table test once SQL is working
+- [ ] Add logging to help debugging in the case of server errors
+- [ ] Add graceful shutdown
+- [ ] User Auth
+- [ ] TLS
+- [ ] SQL: Add a user table and `user_id` column instead of `username` in notes table.
+- [ ] Add routes to create a user
