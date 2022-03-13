@@ -65,7 +65,8 @@ var _ = Describe("Integration", func() {
 			patchData := bytes.NewBuffer([]byte(`{"name":"note1","content":"I am updated!","user":{"username":"Pantalaimon"}}`))
 			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/"+note.Id, patchData)
 			Expect(err).NotTo(HaveOccurred())
-			resp, _ := c.Do(req)
+			resp, err := c.Do(req)
+			Expect(err).NotTo(HaveOccurred())
 			_, err = ioutil.ReadAll(resp.Body)
 			Expect(err).NotTo(HaveOccurred())
 			defer req.Body.Close()
@@ -80,13 +81,40 @@ var _ = Describe("Integration", func() {
 			patchData := bytes.NewBuffer([]byte(`{"archived":true,"user":{"username":"Pantalaimon"}}`))
 			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/"+note.Id, patchData)
 			Expect(err).NotTo(HaveOccurred())
-			resp, _ := c.Do(req)
+			resp, err := c.Do(req)
+			Expect(err).NotTo(HaveOccurred())
 			_, err = ioutil.ReadAll(resp.Body)
 			Expect(err).NotTo(HaveOccurred())
 			defer req.Body.Close()
 			Expect(path).NotTo(BeAnExistingFile())
 			archivedPath := fmt.Sprintf("/tmp/notes/Pantalaimon/archived/note1_%s.txt", note.Id)
 			Expect(archivedPath).To(BeAnExistingFile())
+		})
+
+		Context("when a note is archived", func() {
+			BeforeEach(func() {
+				c := http.Client{}
+				patchData := bytes.NewBuffer([]byte(`{"archived":true,"user":{"username":"Pantalaimon"}}`))
+				req, err := http.NewRequest("PATCH", "http://localhost:10000/note/"+note.Id, patchData)
+				Expect(err).NotTo(HaveOccurred())
+				_, err = c.Do(req)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("unarchives a previously archived note", func() {
+				c := http.Client{}
+				patchData := bytes.NewBuffer([]byte(`{"archived":false,"user":{"username":"Pantalaimon"}}`))
+				req, err := http.NewRequest("PATCH", "http://localhost:10000/note/"+note.Id, patchData)
+				Expect(err).NotTo(HaveOccurred())
+				resp, err := c.Do(req)
+				Expect(err).NotTo(HaveOccurred())
+				_, err = ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				defer req.Body.Close()
+				archivedPath := fmt.Sprintf("/tmp/notes/Pantalaimon/archived/note1_%s.txt", note.Id)
+				Expect(archivedPath).NotTo(BeAnExistingFile())
+				Expect(path).To(BeAnExistingFile())
+			})
 		})
 	})
 

@@ -73,6 +73,15 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 
 		return archivedNote, nil
 	}
+	dir := fmt.Sprintf("%s/%s/", l.workDir, note.User.Username)
+	if Archived(dir, id) {
+		activeNote, err := UnArchive(l.workDir, note)
+		if err != nil {
+			return note, err
+		}
+
+		return activeNote, nil
+	}
 
 	err := validateNote(note)
 	if err != nil {
@@ -145,6 +154,40 @@ func Archive(dir string, note models.Note) (models.Note, error) {
 	return note, nil
 }
 
+func UnArchive(dir string, note models.Note) (models.Note, error) {
+	fileName, err := findFile(fmt.Sprintf("%s/%s/archived/", dir, note.User.Username), note.Id)
+	if err != nil {
+		return models.Note{}, err
+	}
+	oldPath := fmt.Sprintf("%s/%s/archived/%s", dir, note.User.Username, fileName)
+	existingName := strings.Split(fileName, "_")[0]
+	if !isSet(note.Name) || note.Name != existingName {
+		note.Name = existingName
+	}
+	oldContent, err := os.ReadFile(oldPath)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	if !isSet(note.Content) || (note.Content != string(oldContent)) {
+		note.Content = string(oldContent)
+	}
+
+	activeFolder := fmt.Sprintf("%s/%s/active/", dir, note.User.Username)
+	err = os.MkdirAll(activeFolder, 0777)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	activeFilePath := fmt.Sprintf("%s%s", activeFolder, fileName)
+	err = os.Rename(oldPath, activeFilePath)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	return note, nil
+}
+
 func validateNote(note models.Note) error {
 	if !isSet(note.Name) {
 		return errors.New("name must be set")
@@ -191,4 +234,9 @@ func findFile(dir string, id string) (string, error) {
 	}
 
 	return fileName, nil
+}
+
+func Archived(dir string, id string) bool {
+	file, _ := findFile(dir+"archived/", id)
+	return file != ""
 }

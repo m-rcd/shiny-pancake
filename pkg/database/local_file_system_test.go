@@ -305,6 +305,57 @@ var _ = Describe("LocalFileSystem", func() {
 				Expect(updatedNote.Content).To(Equal(existingNote.Content))
 			})
 		})
+
+		Context("UNARCHIVE", func() {
+			var archivedNote models.Note
+
+			BeforeEach(func() {
+				db = database.NewLocalFileSystem(tempDir)
+				err := db.Open()
+				Expect(err).NotTo(HaveOccurred())
+
+				note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
+
+				noteBytes, err := json.Marshal(note)
+				Expect(err).NotTo(HaveOccurred())
+				r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+				existingNote, err = db.Create(r)
+				Expect(existingNote.Archived).To(BeFalse())
+				Expect(err).NotTo(HaveOccurred())
+				updatedNote := models.Note{Name: "Note2", Content: "NewContent", Archived: true, User: models.User{Username: "Casper"}}
+
+				updatedNoteBytes, err := json.Marshal(updatedNote)
+				Expect(err).NotTo(HaveOccurred())
+				rr := io.NopCloser(strings.NewReader(string(updatedNoteBytes)))
+
+				archivedNote, err = db.Update(existingNote.Id, rr)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("unarchives a note", func() {
+				db = database.NewLocalFileSystem(tempDir)
+				err := db.Open()
+				Expect(err).NotTo(HaveOccurred())
+
+				note := models.Note{Archived: false, User: models.User{Username: "Casper"}}
+
+				noteBytes, err := json.Marshal(note)
+				Expect(err).NotTo(HaveOccurred())
+				r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+				updatedNote, err := db.Update(archivedNote.Id, r)
+				Expect(err).NotTo(HaveOccurred())
+				activeFilepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, archivedNote.User.Username, archivedNote.Name, archivedNote.Id)
+				archivedFilePath := fmt.Sprintf("%s/notes/%s/archived/%s_%s.txt", tempDir, archivedNote.User.Username, archivedNote.Name, archivedNote.Id)
+				Expect(activeFilepath).To(BeAnExistingFile())
+				Expect(archivedFilePath).NotTo(BeAnExistingFile())
+				Expect(updatedNote.Archived).To(BeFalse())
+				Expect(updatedNote.Name).To(Equal(archivedNote.Name))
+				Expect(updatedNote.Content).To(Equal(archivedNote.Content))
+			})
+
+		})
 	})
 
 })
