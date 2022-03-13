@@ -65,10 +65,20 @@ func (l *LocalFileSystem) Update(id string, body io.ReadCloser) (models.Note, er
 	json.Unmarshal(reqBody, &note)
 	note.Id = id
 
+	if note.Archived {
+		archivedNote, err := Archive(l.workDir, note)
+		if err != nil {
+			return note, err
+		}
+
+		return archivedNote, nil
+	}
+
 	err := validateNote(note)
 	if err != nil {
 		return models.Note{}, err
 	}
+
 	fileName := fmt.Sprintf("%s_%s.txt", note.Name, note.Id)
 
 	filePath := fmt.Sprintf("%s/%s/active/%s", l.workDir, note.User.Username, fileName)
@@ -89,16 +99,50 @@ func (l *LocalFileSystem) Delete(id string, body io.ReadCloser) error {
 	var user models.User
 	reqBody, _ := ioutil.ReadAll(body)
 	json.Unmarshal(reqBody, &user)
-	filePath, err := findFile(fmt.Sprintf("%s/%s/active/", l.workDir, user.Username), id)
+	fileName, err := findFile(fmt.Sprintf("%s/%s/active/", l.workDir, user.Username), id)
 	if err != nil {
 		return err
 	}
 
-	err = os.RemoveAll(filePath)
+	err = os.RemoveAll(fmt.Sprintf("%s/%s/active/%s", l.workDir, user.Username, fileName))
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func Archive(dir string, note models.Note) (models.Note, error) {
+	fileName, err := findFile(fmt.Sprintf("%s/%s/active/", dir, note.User.Username), note.Id)
+	if err != nil {
+		return models.Note{}, err
+	}
+	oldPath := fmt.Sprintf("%s/%s/active/%s", dir, note.User.Username, fileName)
+	existingName := strings.Split(fileName, "_")[0]
+	if !isSet(note.Name) || note.Name != existingName {
+		note.Name = existingName
+	}
+	oldContent, err := os.ReadFile(oldPath)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	if !isSet(note.Content) || (note.Content != string(oldContent)) {
+		note.Content = string(oldContent)
+	}
+
+	archivedFolder := fmt.Sprintf("%s/%s/archived/", dir, note.User.Username)
+	err = os.MkdirAll(archivedFolder, 0777)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	archivedFilePath := fmt.Sprintf("%s%s", archivedFolder, fileName)
+	err = os.Rename(oldPath, archivedFilePath)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	return note, nil
 }
 
 func validateNote(note models.Note) error {
@@ -129,7 +173,7 @@ func newId() string {
 }
 
 func findFile(dir string, id string) (string, error) {
-	var f string
+	var fileName string
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -138,13 +182,13 @@ func findFile(dir string, id string) (string, error) {
 	for _, file := range files {
 		name := strings.Split(strings.Split(file.Name(), "_")[1], ".")[0]
 		if name == id {
-			f = dir + file.Name()
+			fileName = file.Name()
 		}
 	}
 
-	if f == "" {
+	if fileName == "" {
 		return "", errors.New("file does not exist")
 	}
 
-	return f, nil
+	return fileName, nil
 }

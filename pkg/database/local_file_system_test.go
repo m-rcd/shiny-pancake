@@ -240,4 +240,71 @@ var _ = Describe("LocalFileSystem", func() {
 			})
 		})
 	})
+
+	Context("ARCHIVE", func() {
+		var existingNote models.Note
+
+		BeforeEach(func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
+
+			noteBytes, err := json.Marshal(note)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+			existingNote, err = db.Create(r)
+			Expect(existingNote.Archived).To(BeFalse())
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("archives a note", func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			note := models.Note{Archived: true, User: models.User{Username: "Casper"}}
+
+			noteBytes, err := json.Marshal(note)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+			updatedNote, err := db.Update(existingNote.Id, r)
+			Expect(err).NotTo(HaveOccurred())
+			activeFilepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+			archivedFilePath := fmt.Sprintf("%s/notes/%s/archived/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+			Expect(activeFilepath).NotTo(BeAnExistingFile())
+			Expect(archivedFilePath).To(BeAnExistingFile())
+			Expect(updatedNote.Archived).To(BeTrue())
+			Expect(updatedNote.Name).To(Equal(existingNote.Name))
+			Expect(updatedNote.Content).To(Equal(existingNote.Content))
+		})
+
+		Context("when content and name are passed as attributes", func() {
+			It("archives the note but does not update name/content", func() {
+				db = database.NewLocalFileSystem(tempDir)
+				err := db.Open()
+				Expect(err).NotTo(HaveOccurred())
+
+				note := models.Note{Name: "Note2", Content: "NewContent", Archived: true, User: models.User{Username: "Casper"}}
+
+				noteBytes, err := json.Marshal(note)
+				Expect(err).NotTo(HaveOccurred())
+				r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+				updatedNote, err := db.Update(existingNote.Id, r)
+				Expect(err).NotTo(HaveOccurred())
+				activeFilepath := fmt.Sprintf("%s/notes/%s/active/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+				archivedFilePath := fmt.Sprintf("%s/notes/%s/archived/%s_%s.txt", tempDir, existingNote.User.Username, existingNote.Name, existingNote.Id)
+				Expect(activeFilepath).NotTo(BeAnExistingFile())
+				Expect(archivedFilePath).To(BeAnExistingFile())
+				Expect(updatedNote.Archived).To(BeTrue())
+				Expect(updatedNote.Name).To(Equal(existingNote.Name))
+				Expect(updatedNote.Content).To(Equal(existingNote.Content))
+			})
+		})
+	})
+
 })

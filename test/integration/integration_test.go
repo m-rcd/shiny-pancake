@@ -74,6 +74,20 @@ var _ = Describe("Integration", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(dat)).To(Equal("I am updated!"))
 		})
+
+		It("archives a previously saved note", func() {
+			c := http.Client{}
+			patchData := bytes.NewBuffer([]byte(`{"archived":true,"user":{"username":"Pantalaimon"}}`))
+			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/"+note.Id, patchData)
+			Expect(err).NotTo(HaveOccurred())
+			resp, _ := c.Do(req)
+			_, err = ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			defer req.Body.Close()
+			Expect(path).NotTo(BeAnExistingFile())
+			archivedPath := fmt.Sprintf("/tmp/notes/Pantalaimon/archived/note1_%s.txt", note.Id)
+			Expect(archivedPath).To(BeAnExistingFile())
+		})
 	})
 
 	Context("DELETE request", func() {
