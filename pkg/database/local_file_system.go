@@ -80,6 +80,23 @@ func (l *LocalFileSystem) Update(name string, body io.ReadCloser) (models.Note, 
 	return note, nil
 }
 
+func (l *LocalFileSystem) Delete(name string, body io.ReadCloser) error {
+	var user models.User
+	reqBody, _ := ioutil.ReadAll(body)
+	json.Unmarshal(reqBody, &user)
+	path := fmt.Sprintf("%s/%s/active/%s.txt", l.workDir, user.Username, name)
+	err := validateFileExists(path)
+	if err != nil {
+		return err
+	}
+
+	err = os.RemoveAll(path)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateNote(note models.Note) error {
 	if !isSet(note.Name) {
 		return errors.New("name must be set")

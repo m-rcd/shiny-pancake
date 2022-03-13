@@ -110,4 +110,49 @@ var _ = Describe("Handler", func() {
 			})
 		})
 	})
+
+	Context("#DeleteNote", func() {
+		It("handles DELETE request", func() {
+			fake_db := new(databasefakes.FakeDatabase)
+
+			data := bytes.NewBuffer([]byte(`{"username":"Buffy"}`))
+			req, err := http.NewRequest("PATCH", "http://localhost:10000/note/Vampires", data)
+			Expect(err).NotTo(HaveOccurred())
+			r := httptest.NewRecorder()
+			h := handler.New(fake_db)
+
+			fake_db.DeleteReturns(nil)
+			h.DeleteNote(r, req)
+			Expect(fake_db.DeleteCallCount()).To(Equal(1))
+			var response responses.JsonNoteResponse
+
+			json.Unmarshal(r.Body.Bytes(), &response)
+			Expect(response.Type).To(Equal("success"))
+			Expect(response.StatusCode).To(Equal(200))
+			Expect(len(response.Data)).To(Equal(0))
+			Expect(response.Message).To(Equal("The note was successfully deleted"))
+		})
+
+		Context("when an error occurs", func() {
+			It("does not delete the note", func() {
+				fake_db := new(databasefakes.FakeDatabase)
+
+				h := handler.New(fake_db)
+				r := httptest.NewRecorder()
+				data := bytes.NewBuffer([]byte(`{"username":"Buffy"}`))
+				req, err := http.NewRequest("POST", "http://localhost:10000/note/Vampires", data)
+				Expect(err).NotTo(HaveOccurred())
+
+				fake_db.DeleteReturns(errors.New("Not deleted"))
+				h.DeleteNote(r, req)
+				Expect(fake_db.DeleteCallCount()).To(Equal(1))
+				var response responses.JsonNoteResponse
+
+				json.Unmarshal(r.Body.Bytes(), &response)
+				Expect(response.Type).To(Equal("failed"))
+				Expect(response.StatusCode).To(Equal(500))
+				Expect(response.Message).To(Equal("Not deleted"))
+			})
+		})
+	})
 })

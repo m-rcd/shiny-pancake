@@ -178,4 +178,54 @@ var _ = Describe("LocalFileSystem", func() {
 		})
 	})
 
+	Context("Delete", func() {
+		BeforeEach(func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			note := models.Note{Name: "Note1", Content: "Miaaaww", User: models.User{Username: "Casper"}}
+
+			noteBytes, err := json.Marshal(note)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(noteBytes)))
+
+			_, err = db.Create(r)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("deletes a note", func() {
+			db = database.NewLocalFileSystem(tempDir)
+			err := db.Open()
+			Expect(err).NotTo(HaveOccurred())
+
+			user := models.User{Username: "Casper"}
+
+			userBytes, err := json.Marshal(user)
+			Expect(err).NotTo(HaveOccurred())
+			r := io.NopCloser(strings.NewReader(string(userBytes)))
+
+			err = db.Delete("Note1", r)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tempDir + "/notes/Casper/active/note1.txt").NotTo(BeAnExistingFile())
+		})
+
+		Context("when errors occur", func() {
+			It("does not delete the file and raises an error", func() {
+				db = database.NewLocalFileSystem(tempDir)
+				err := db.Open()
+				Expect(err).NotTo(HaveOccurred())
+
+				user := models.User{Username: "Casper"}
+
+				userBytes, err := json.Marshal(user)
+				Expect(err).NotTo(HaveOccurred())
+				r := io.NopCloser(strings.NewReader(string(userBytes)))
+
+				err = db.Delete("Note2", r)
+				Expect(err).To(MatchError("file does not exist"))
+				Expect(tempDir + "/notes/Casper/active/note1.txt").To(BeAnExistingFile())
+			})
+		})
+	})
 })

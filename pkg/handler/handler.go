@@ -48,6 +48,19 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	err := h.db.Delete(name, r.Body)
+	if err != nil {
+		response = noteResponse.Failure(err.Error())
+	} else {
+		response = noteResponse.Success([]models.Note{}, "The note was successfully deleted")
+	}
+
+	json.NewEncoder(w).Encode(response)
+}
+
 func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to Note!")
 }

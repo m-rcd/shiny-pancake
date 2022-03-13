@@ -44,6 +44,7 @@ var _ = Describe("Integration", func() {
 			defer resp.Body.Close()
 			Expect("/tmp/notes/Pantalaimon/active/note1.txt").To(BeAnExistingFile())
 		})
+
 		AfterEach(func() {
 			os.RemoveAll("/tmp/notes")
 		})
@@ -61,6 +62,34 @@ var _ = Describe("Integration", func() {
 			dat, err := os.ReadFile("/tmp/notes/Pantalaimon/active/note1.txt")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(dat)).To(Equal("I am updated!"))
+		})
+	})
+
+	Context("DELETE request", func() {
+		BeforeEach(func() {
+			c := http.Client{}
+			postData := bytes.NewBuffer([]byte(`{"name":"note1","content":"I am a new note!","user":{"username":"Pantalaimon"}}`))
+			resp, err := c.Post("http://localhost:10000/note", "application/json", postData)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+			Expect("/tmp/notes/Pantalaimon/active/note1.txt").To(BeAnExistingFile())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll("/tmp/notes")
+		})
+
+		It("deletes a note", func() {
+			c := http.Client{}
+			data := bytes.NewBuffer([]byte(`{"username":"Pantalaimon"}`))
+			req, err := http.NewRequest("DELETE", "http://localhost:10000/note/note1", data)
+			Expect(err).NotTo(HaveOccurred())
+			resp, _ := c.Do(req)
+			_, err = ioutil.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+			defer req.Body.Close()
+
+			Expect("/tmp/notes/Pantalaimon/active/note1.txt").NotTo(BeAnExistingFile())
 		})
 	})
 })
