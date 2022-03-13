@@ -265,7 +265,6 @@ The API have the following key features:
         }
     ]
     ```
-    SQL storage not supported for this action yet.
 
 
 1. List saved notes that are archived

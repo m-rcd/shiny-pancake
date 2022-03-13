@@ -133,7 +133,23 @@ func (s *SQL) Delete(id string, body io.ReadCloser) error {
 }
 
 func (s *SQL) ListActiveNotes(body io.ReadCloser) ([]models.Note, error) {
-	return []models.Note{}, nil
+	result, err := s.Db.Query("SELECT * FROM notes WHERE archived=0")
+	if err != nil {
+		return []models.Note{}, err
+	}
+	defer result.Close()
+
+	var notes []models.Note
+	var note models.Note
+
+	for result.Next() {
+		err := result.Scan(&note.Id, &note.Name, &note.Content, &note.Archived, &note.User.Username)
+		if err != nil {
+			return []models.Note{}, err
+		}
+		notes = append(notes, note)
+	}
+	return notes, nil
 }
 
 func (s *SQL) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {

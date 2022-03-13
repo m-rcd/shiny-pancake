@@ -316,6 +316,26 @@ var _ = Describe("When running the note server", func() {
 				return nil
 			}, "10s").Should(Succeed())
 
+			By("listing active notes")
+			Eventually(func(g Gomega) error {
+				data := bytes.NewBuffer([]byte(`{"username":"Pantalaimon"}`))
+				req, err := http.NewRequest("GET", "http://localhost:10000/notes/active", data)
+				g.Expect(err).NotTo(HaveOccurred())
+				resp, err := c.Do(req)
+				g.Expect(err).NotTo(HaveOccurred())
+				body, err := ioutil.ReadAll(resp.Body)
+				g.Expect(err).NotTo(HaveOccurred())
+				defer req.Body.Close()
+
+				var list []models.Note
+				json.Unmarshal(body, &list)
+				g.Expect(len(list)).To(Equal(2))
+				g.Expect(list[0]).To(Equal(note1))
+				g.Expect(list[1]).To(Equal(note2))
+				return nil
+
+			}, "20s").Should(Succeed())
+
 			By("archiving a note")
 			Eventually(func(g Gomega) error {
 				patchData := bytes.NewBuffer([]byte(`{"archived":true}`))

@@ -3,6 +3,7 @@ package sql_test
 import (
 	"encoding/json"
 	"io"
+	"regexp"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -141,6 +142,27 @@ var _ = Describe("Sql", func() {
 			updatedNote, err := s.Update(existingNote.Id, reader)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(updatedNote.Archived).To(Equal(requestData.Archived))
+		})
+	})
+
+	Context("List active notes", func() {
+		It("lists active notes", func() {
+			s := sql.NewSQL("username", "password", "127.0.0.1", "3306")
+			db, mock, err := sqlmock.New()
+			Expect(err).NotTo(HaveOccurred())
+			s.Db = db
+			defer db.Close()
+			existingNote := models.Note{Id: id, Name: name, Content: content, Archived: archived, User: models.User{Username: username}}
+
+			reader := io.NopCloser(strings.NewReader(""))
+
+			rows := sqlmock.NewRows([]string{"id", "name", "content", "archived", "username"}).
+				AddRow(existingNote.Id, existingNote.Name, existingNote.Content, existingNote.Archived, existingNote.User.Username)
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM notes WHERE archived=0")).WillReturnRows(rows)
+
+			list, err := s.ListActiveNotes(reader)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(list)).To(Equal(1))
 		})
 	})
 })
