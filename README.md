@@ -26,6 +26,7 @@ The API have the following key features:
 - [Gorilla mux](https://pkg.go.dev/github.com/gorilla/mux#section-readme) to handle requests. I chose this one because it is widely used and well supported.
 - [ginkgo](https://github.com/onsi/ginkgo) for testing. I have opted for this one rather then the inbuilt go test because it allows for more descriptive tests. 
 - [go-sql-mysql](https://github.com/go-sql-driver/mysql) I chose this one because it is well maintained and supporrted.
+- [go-sqlmock](github.com/DATA-DOG/go-sqlmock) to mock sql queries in unit tests.
 - [counterfeiter](github.com/maxbrunsfeld/counterfeiter/) to generate a fake database interface for unit tests.
 
 
@@ -288,6 +289,8 @@ The API have the following key features:
 
 To run all tests: 
 
+`DB_USERNAME` and `DB_PASSWORD` should be set in an `.env` file.
+
 ```shell
 ginkgo -r -v
 ```
@@ -302,3 +305,4 @@ One, it will allow a developer to use the app without having to setup the databa
 - [ ] Add Makefile
 - [ ] Test for SQL 
 - [ ] Add SQL support for all request
+- [ ] Refactor integration test to be table test once SQL is working

@@ -42,6 +42,7 @@ func (s *SQL) Open() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -50,22 +51,26 @@ func (s *SQL) Close() error {
 }
 
 func (s *SQL) Create(body io.ReadCloser) (models.Note, error) {
-	stmt, err := s.Db.Prepare("INSERT INTO notes(name, content, username, archived) VALUES(?, ?, ?, ?)")
-	if err != nil {
-		return models.Note{}, err
-	}
 	var note models.Note
-	reqBody, _ := ioutil.ReadAll(body)
-	json.Unmarshal(reqBody, &note)
-	savedNote, err := stmt.Exec(note.Name, note.Content, note.User.Username, false)
+	reqBody, err := ioutil.ReadAll(body)
 	if err != nil {
 		return models.Note{}, err
 	}
+
+	json.Unmarshal(reqBody, &note)
+	sql := fmt.Sprintf("INSERT INTO notes(name, content, username, archived) VALUES ('%s', '%s', '%s', '%v')", note.Name, note.Content, note.User.Username, 0)
+	savedNote, err := s.Db.Exec(sql)
+	if err != nil {
+		return models.Note{}, err
+	}
+
 	id, err := savedNote.LastInsertId()
 	if err != nil {
 		return models.Note{}, err
 	}
+
 	note.Id = strconv.FormatInt(id, 10)
+
 	return note, nil
 }
 
