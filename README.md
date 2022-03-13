@@ -41,7 +41,7 @@ The API have the following key features:
 1. Build the app
 
     ```shell
-    go build
+    make build
     ```
 
 1. Start the server
@@ -200,7 +200,7 @@ The API have the following key features:
     }
     ```
     **SQL**
-    
+
     The note will have the attribute `archived` set to true.
 
 1. Unarchive a note 
@@ -305,7 +305,7 @@ To run all tests:
 `DB_USERNAME` and `DB_PASSWORD` should be set in an `.env` file.
 
 ```shell
-ginkgo -r -v
+make test
 ```
 
 ## Approach
@@ -315,7 +315,7 @@ One, it will allow a developer to use the app without having to setup the databa
 
 ## Todo
 
-- [ ] Add Makefile
+- [x] Add Makefile
 - [ ] Test for SQL 
 - [ ] Add SQL support for all request
 - [ ] Refactor integration test to be table test once SQL is working
