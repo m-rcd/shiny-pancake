@@ -229,7 +229,10 @@ The API have the following key features:
         "message":"The note was successfully updated"
     }
     ```
-    SQL storage not supported for this action yet.
+
+     **SQL**
+
+    The note will have the attribute `archived` set to false.
 
 
 1. List saved notes that aren't archived

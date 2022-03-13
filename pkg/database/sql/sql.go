@@ -103,7 +103,14 @@ func (s *SQL) Update(id string, body io.ReadCloser) (models.Note, error) {
 	note.Id = id
 
 	if note.Archived {
-		if err := ArchiveNote(s, note); err != nil {
+		if err := Archive(s, note); err != nil {
+			return models.Note{}, err
+		}
+		return note, nil
+	}
+
+	if !note.Archived && existingNote.Archived {
+		if err := Unarchive(s, note); err != nil {
 			return models.Note{}, err
 		}
 		return note, nil
@@ -133,8 +140,17 @@ func (s *SQL) ListArchivedNotes(body io.ReadCloser) ([]models.Note, error) {
 	return []models.Note{}, nil
 }
 
-func ArchiveNote(s *SQL, note models.Note) error {
+func Archive(s *SQL, note models.Note) error {
 	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 1, note.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Unarchive(s *SQL, note models.Note) error {
+	_, err := s.Db.Exec("UPDATE notes set archived=? where id=?", 0, note.Id)
 	if err != nil {
 		return err
 	}
